@@ -1,6 +1,8 @@
 # Prerequisites
 *.d
 
+.vs/
+
 # Compiled Object files
 *.slo
 *.lo
@@ -30,3 +32,30 @@
 *.exe
 *.out
 *.app
+
+# --- Framework ---
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Visual Studio
+*.VC.db
+*.suo
+*.user
+*.ncb
+*.opensdf
+*.ipch
+
+# Builds & releases
+/development/build/
+/production/
+/*.zip
+/*.tar.gz
+
+# Dependencies
+/third_party/**/build/
+/third_party/**/bin/
+/third_party/**/lib/

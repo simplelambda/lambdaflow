@@ -1,0 +1,23 @@
+﻿
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>IPC Test</title>
+</head>
+<body>
+    <input id="in" placeholder="mensaje" />
+    <button onclick="sendMessage()">Enviar</button>
+    <pre id="out"></pre>
+
+    <script>
+        function sendMessage() {
+            const msg = document.getElementById("in").value;
+            send(msg);
+        }
+
+        window.receive = function (response) {
+            document.getElementById("out").textContent += response + "\n";
+        };
+    </script>
+</body>
+</html>

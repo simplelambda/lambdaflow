@@ -1,0 +1,33 @@
+{
+  "appName": "CSharpTest",
+  "appVersion": "1.0.0",
+
+  "includeVersionInResultName": true,
+
+  "developmentBackendFolder": "backend",
+  "developmentFrontendFolder": "frontend",
+
+  "resultFolder": "Results",
+  "backendResultFolderName": "bck",
+  "frontendResultFolderName": "frnt",
+
+  "frontendInitialHTML": "index.html",
+
+  "window": {
+    "title": "CSharpTest",
+    "width": 800,
+    "height": 600
+  },
+
+  "platforms": {
+    "windows": {
+      "compileCommand": "dotnet publish -c Release -r win-x64 -o bin -p:AssemblyName=bck -p:OutputPath=bin"
+    },
+    "linux": {
+      "compileCommand": "dotnet publish -c Release -r linux-x64 -o bin -p:AssemblyName=bck -p:OutputPath=bin"
+    },
+    "mac": {
+      "compileCommand": "dotnet publish -c Release -r osx-x64 -o bin -p:AssemblyName=bck -p:OutputPath=bin"
+    }
+  }
+}
