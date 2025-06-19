@@ -1,0 +1,86 @@
+; installer.nsi.template
+!include "MUI2.nsh"
+!include "x64.nsh"
+
+!define APP_NAME    "${APP_NAME}"
+!define APP_VERSION "${APP_VERSION}"
+!define APP_ICO     "${APP_ICO}"
+!define ORG_NAME    "${ORG_NAME}"
+!define SRC_DIR     "${SRC_DIR}"
+
+!define MUI_ICON    "app.ico"
+!define MUI_UNICON  "app.ico"
+
+Name "${APP_NAME} ${APP_VERSION}"
+OutFile "${SRC_DIR}\${APP_NAME}-${APP_VERSION}-winx64--installer.exe"
+InstallDir "$PROGRAMFILES64\${ORG_NAME}\${APP_NAME}"
+RequestExecutionLevel admin
+
+
+Function .onInit
+  ReadRegStr $0 HKLM "Software\${ORG_NAME}\${APP_NAME}" "InstallDir"
+  ReadRegStr $1 HKLM "Software\${ORG_NAME}\${APP_NAME}" "Version"
+
+  StrCmp $0 "" not_installed
+  StrCmp $1 "${APP_VERSION}" 0 different_version
+
+  MessageBox MB_ICONQUESTION|MB_YESNO \
+    "Version ${APP_VERSION} is already installed in: $0 Do you want to reinstall it?" \
+    IDYES do_reinstall IDNO ask_uninstall
+
+  ask_uninstall:
+    MessageBox MB_ICONQUESTION|MB_YESNO \
+      "Do you want to uninstall ${APP_NAME}?" \
+      IDYES do_uninstall IDNO abort_install
+
+  different_version:
+    MessageBox MB_ICONQUESTION|MB_YESNO \
+      "A different version ($1) of ${APP_NAME} is detected at: $0 Upgrade to ${APP_VERSION}?" \
+      IDYES do_reinstall IDNO abort_install
+    Goto done_init
+
+  not_installed:
+    StrCpy $INSTDIR "$PROGRAMFILES64\${ORG_NAME}\${APP_NAME}"
+    Goto done_init
+
+  do_reinstall:
+    StrCpy $INSTDIR $0
+    Return
+
+  do_uninstall:
+    ExecWait '"$0\Uninstall.exe" /S'
+    Abort
+
+  abort_install:
+    Abort
+
+  done_init:
+FunctionEnd
+
+
+!insertmacro MUI_PAGE_DIRECTORY
+!insertmacro MUI_PAGE_INSTFILES
+!insertmacro MUI_UNPAGE_INSTFILES
+!insertmacro MUI_LANGUAGE "English"
+
+Section "Install"
+    SetOutPath "$INSTDIR"
+    File /r "${SRC_DIR}\*"
+         
+
+    CreateDirectory "$PROGRAMFILES64\${ORG_NAME}\${APP_NAME}"
+    Rename       "$INSTDIR\public.pem"    "$PROGRAMFILES64\${ORG_NAME}\${APP_NAME}\public.pem"
+    Rename       "$INSTDIR\integrity.sig" "$PROGRAMFILES64\${ORG_NAME}\${APP_NAME}\integrity.sig"
+
+    WriteUninstaller "$INSTDIR\Uninstall.exe"
+
+    WriteRegStr HKLM "Software\${ORG_NAME}\${APP_NAME}" "InstallDir" "$INSTDIR"
+    WriteRegStr HKLM "Software\${ORG_NAME}\${APP_NAME}" "Version" "${APP_VERSION}"
+SectionEnd
+
+Section "Uninstall"
+    RMDir /r "$PROGRAMFILES64\${ORG_NAME}\${APP_NAME}"
+    RMDir /r "$INSTDIR"
+
+    DeleteRegKey HKLM "Software\${ORG_NAME}\${APP_NAME}"
+SectionEnd

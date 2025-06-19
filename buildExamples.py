@@ -39,7 +39,12 @@ def sync_examples():
         csproj_dst = os.path.join(example_dir, 'lambdaflow.csproj')
         if os.path.isfile(csproj_src):
             shutil.copy2(csproj_src, csproj_dst)
-        
+
+        app_ico_src = os.path.join(repo_root, 'development', 'app.ico')
+        app_ico_dst = os.path.join(example_dir, 'app.ico')
+        if os.path.isfile(app_ico_src):
+            shutil.copy2(app_ico_src, app_ico_dst)
+
         print(f"Synchronized '{example}'")
 
     print("All examples synchronized.")

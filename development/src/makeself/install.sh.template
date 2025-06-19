@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -e
+
+APP="{APP}"
+ORG="{ORG}"
+VER="{VER}"
+ARCH="{ARCH}"
+
+DEFAULT="/opt/${ORG}/${APP}"
+
+read -rp "Install directory [${DEFAULT}]: " INSTDIR
+INSTDIR=${INSTDIR:-$DEFAULT}
+
+echo "Installing ${APP} v${VER} (${ARCH}) to ${INSTDIR}"
+sudo mkdir -p "$INSTDIR"
+
+sudo cp -r ./* "$INSTDIR/"
+
+PROTDIR="/var/lib/${ORG}/${APP}"
+echo "Storing integrity files in ${PROTDIR}"
+sudo mkdir -p "$PROTDIR"
+sudo mv "${INSTDIR}/public.pem"    "$PROTDIR/"
+sudo mv "${INSTDIR}/integrity.sig" "$PROTDIR/"
+
+
+
+UNSCRIPT="$INSTDIR/uninstall-${APP}.sh"
+echo "Creating uninstall script at ${UNSCRIPT}"
+sudo tee "${UNSCRIPT}" > /dev/null <<EOF
+#!/usr/bin/env bash
+set -e
+echo "Uninstalling ${APP}..."
+sudo rm -rf "${INSTDIR}"
+sudo rm -rf "${PROTDIR}"
+echo "Done."
+EOF
+sudo chmod +x "${UNSCRIPT}"
+
+
+
+if command -v xdg-desktop-icon >/dev/null 2>&1; then
+  DESKFILE="$HOME/.local/share/applications/${APP}.desktop"
+  echo "Creating desktop entry at ${DESKFILE}"
+  cat <<EOF >"$DESKFILE"
+
+[Desktop Entry]
+Name=${APP}
+Exec=${INSTDIR}/${APP}
+Icon=${INSTDIR}/icon.png
+Type=Application
+Categories=Utility;
+EOF
+  xdg-desktop-icon install --novendor "$DESKFILE"
+fi
+
+echo "Installation complete."
+echo "To uninstall, run: sudo ${UNSCRIPT}"
+exit 0

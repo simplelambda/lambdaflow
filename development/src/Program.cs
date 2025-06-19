@@ -1,57 +1,122 @@
 using System;
 using System.IO;
+using System.IO.Compression;
+using System.Formats.Asn1;
 using System.Reflection;
-using System.Threading;
+using System.Runtime.InteropServices;
+using System.Security;
+using System.Security.AccessControl;
+using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text.Json;
+using System.Collections.Generic;
+using System.Linq;
+using System.Diagnostics;
 
 namespace LambdaFlow {
-    internal static class Program {
-        [STAThread]
-        static void Main(string[] args) {
+    public static class Program {
 
-            // Load the embedded config.json resource
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool AllocConsole();
 
+        private static Config LoadConfig() {
             var asm = Assembly.GetExecutingAssembly();
             var resName = "lambdaflow.config.json";
             using var stream = asm.GetManifestResourceStream(resName) ?? throw new FileNotFoundException($"Resource '{resName}' not found.");
 
-
-            // Obtain the Config object from the 
-
             Config cfg;
             try {
                 cfg = JsonSerializer.Deserialize<Config>(stream) ?? throw new Exception("Embedded config.json malformed.");
+                return cfg;
             }
             catch (Exception ex) {
                 Console.Error.WriteLine($"Error reading embedded config: {ex.Message}");
-                return;
+                return null;
             }
+        }
+
+        [STAThread]
+        static void Main(string[] args) {
+
+            // Check parameters
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && args.Contains("--console", StringComparer.OrdinalIgnoreCase)) AllocConsole();
 
 
-            // Obtain backend exe path
+            // Load config from config.json
 
-            var backendRelativePath = Path.Combine(cfg.BackendFolder, "bck.exe");
-            var exePath = Path.GetFullPath(backendRelativePath, AppContext.BaseDirectory);
-
-            var bargs = args.Length > 0 ? args[0..] : Array.Empty<string>();
+            Config cfg = LoadConfig();
 
 
-            // Create IPCBridge and WebViewHost
+            // Lock frontend.pak to avoid TOCTOU on frontend
 
-            var bridge = new IPCBridge(exePath, bargs);
-
-
-            // Obtain the frontend initial HTML path
-
-            var frontendRelativePath = Path.Combine(cfg.FrontendFolder, cfg.FrontendInitialHTML);
-            var htmlPath = Path.GetFullPath(frontendRelativePath, AppContext.BaseDirectory);
-
-            var host = new WebViewHost(cfg.Window, bridge, htmlPath);
+            var frontendPath = Path.Combine(AppContext.BaseDirectory, "frontend.pak");
+            var frontPakLock = SecurityManager.LockFile(frontendPath);
 
 
-            // Run the frontend
+            // Verify signed integrity manifest
 
-            host.Run();
+            SecurityManager.VerifyIntegrity(cfg);
+
+
+            // Create temporary directory for backend files
+
+            var tempRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(tempRoot);
+
+            Console.WriteLine($"Temporary directory created: {tempRoot}");
+
+            SecurityManager.DenyDeleteOnDirectory(tempRoot);
+
+            //Extract backend
+
+            try {
+                var backPak = Path.Combine(AppContext.BaseDirectory, "backend.pak");
+                var tmpBackPak = Path.Combine(tempRoot, Path.GetFileName(backPak));
+
+                File.Copy(backPak, tmpBackPak);
+                ZipFile.ExtractToDirectory(tmpBackPak, tempRoot);
+
+                SecurityManager.DenyWriteOnDirectory(tempRoot);
+
+                // Lock exe
+
+                var exePath = Path.Combine(tempRoot, "Backend" + (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".exe" : ""));
+                SecurityManager.LockFile(exePath);
+
+                // Create IPCBridge and WebViewHost
+
+                var bridge = new IPCBridge(exePath, args);
+
+                var process = bridge.Process;
+                SecurityManager.UnlockFile(exePath);
+
+                // Obtain the frontend initial HTML path
+
+                var host = new WebViewHost(cfg.Window, bridge, frontPakLock, cfg.FrontendInitialHTML);
+
+
+                // Run the frontend
+
+                host.Run();
+
+                SecurityManager.UnlockFile(frontendPath);
+                bridge.Dispose();
+            }
+            finally {
+                if (frontPakLock != null) SecurityManager.UnlockFile(frontendPath);
+                SecurityManager.RestoreWriteOnDirectory(tempRoot);
+                SecurityManager.RestoreDeleteOnDirectory(tempRoot);
+
+                // Clear the temporary directory
+
+                try {
+                    Directory.Delete(tempRoot, true);
+                }
+                catch (Exception ex) {
+                    Console.Error.WriteLine($"[Error] Could not delete temporary directory '{tempRoot}': {ex.Message}");
+                }
+            }
         }
     }
 }

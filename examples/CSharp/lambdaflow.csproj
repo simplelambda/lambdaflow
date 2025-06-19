@@ -19,10 +19,16 @@
 		<Compile Include="lambdaflow/IPCBridge.cs" />
 		<Compile Include="lambdaflow/Program.cs" />
 		<Compile Include="lambdaflow/WebViewHost.cs" />
+		<Compile Include="lambdaflow/SecurityManager.cs" />
 	</ItemGroup>
+
 	<ItemGroup>
 		<EmbeddedResource Include="config.json" />
+		<EmbeddedResource Include="integrity.json" />
+		<EmbeddedResource Include="integrity.sig" />
+		<EmbeddedResource Include="public.pem" />
 	</ItemGroup>
+
 	<ItemGroup>
 		<PackageReference Include="SharpWebview" Version="0.*" />
 	</ItemGroup>

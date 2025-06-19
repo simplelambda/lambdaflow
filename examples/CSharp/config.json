@@ -1,6 +1,9 @@
 {
   "appName": "CSharpTest",
   "appVersion": "1.0.0",
+  "organizationName": "SimpleLambda",
+
+  "appIcon": "app.ico",
 
   "includeVersionInResultName": true,
 
@@ -8,8 +11,6 @@
   "developmentFrontendFolder": "frontend",
 
   "resultFolder": "Results",
-  "backendResultFolderName": "bck",
-  "frontendResultFolderName": "frnt",
 
   "frontendInitialHTML": "index.html",
 
@@ -20,14 +21,51 @@
   },
 
   "platforms": {
+
     "windows": {
-      "compileCommand": "dotnet publish -c Release -r win-x64 -o bin -p:AssemblyName=bck -p:OutputPath=bin"
+      "archs": {
+
+        "x64": {
+          "compileCommand": "dotnet publish -c Release -r win-x64 -o bin",
+          "package": true
+        },
+
+        "x86": {
+          "compileCommand": "dotnet publish -c Release -r win-x86 -o bin",
+          "package": true
+        }
+      }
     },
+
     "linux": {
-      "compileCommand": "dotnet publish -c Release -r linux-x64 -o bin -p:AssemblyName=bck -p:OutputPath=bin"
+      "archs": {
+
+        "x64": {
+          "compileCommand": "dotnet publish -c Release -r linux-x64 -o bin",
+          "package": true
+        },
+
+        "arm64": {
+          "compileCommand": "dotnet publish -c Release -r linux-arm64 -o bin",
+          "package": true
+        }
+      }
     },
+
     "mac": {
-      "compileCommand": "dotnet publish -c Release -r osx-x64 -o bin -p:AssemblyName=bck -p:OutputPath=bin"
+      "archs": {
+
+        "x64": {
+          "compileCommand": "dotnet publish -c Release -r osx-x64 -o bin",
+          "package": true
+        },
+
+        "arm64": {
+          "compileCommand": "dotnet publish -c Release -r osx-arm64 -o bin",
+          "package": true
+        }
+      }
     }
+
   }
 }
