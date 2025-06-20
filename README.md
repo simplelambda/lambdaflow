@@ -1,6 +1,6 @@
 🦙 Lambdaflow
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/your-org/lambdaflow/ci.yml?branch=main)](https://github.com/your-org/lambdaflow/actions) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Docs](https://img.shields.io/badge/Docs-Online-blue.svg)](https://simplelambda.github.io/lambdaflow/)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/simplelambda/lambdaflow/ci.yml?branch=main)](https://github.com/simplelambda/lambdaflow/actions) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Docs](https://img.shields.io/badge/Docs-Online-blue.svg)](https://simplelambda.github.io/lambdaflow/)
 
 ---
 

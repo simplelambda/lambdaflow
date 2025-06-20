@@ -1,0 +1,6 @@
+site_name: Lambdaflow
+site_description: "Secure C# polyglot framework—any backend, modern WebView UI"
+theme:
+  name: material
+nav:
+  - Home: index.md
