@@ -2,6 +2,7 @@
 !include "MUI2.nsh"
 
 !define APP_NAME    "${APP_NAME}"
+!define EXE_NAME    "${EXE_NAME}"
 !define APP_VERSION "${APP_VERSION}"
 !define APP_ICO     "${APP_ICO}"
 !define ORG_NAME    "${ORG_NAME}"
@@ -10,9 +11,12 @@
 !define MUI_ICON    "app.ico"
 !define MUI_UNICON  "app.ico"
 
+
+
 Name "${APP_NAME} ${APP_VERSION}"
 OutFile "${SRC_DIR}\${APP_NAME}-${APP_VERSION}-winx86--installer.exe"
 InstallDir "$PROGRAMFILES\${ORG_NAME}\${APP_NAME}"
+BrandingText "${ORG_NAME} ${APP_NAME} ${APP_VERSION}"
 RequestExecutionLevel admin
 
 
@@ -56,10 +60,15 @@ Function .onInit
   done_init:
 FunctionEnd
 
-
+!insertmacro MUI_PAGE_WELCOME
+${MACRO_LICENSE} ${LICENSE_FILE}
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
+
+!insertmacro MUI_UNPAGE_WELCOME
 !insertmacro MUI_UNPAGE_INSTFILES
+!insertmacro MUI_UNPAGE_FINISH
+
 !insertmacro MUI_LANGUAGE "English"
 
 Section "Install"
@@ -75,11 +84,35 @@ Section "Install"
 
     WriteRegStr HKLM "Software\${ORG_NAME}\${APP_NAME}" "InstallDir" "$INSTDIR"
     WriteRegStr HKLM "Software\${ORG_NAME}\${APP_NAME}" "Version" "${APP_VERSION}"
+
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayName" "${APP_NAME}"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayVersion" "${APP_VERSION}"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "Publisher" "${ORG_NAME}"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayIcon" "$INSTDIR\${APP_ICO}"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "UninstallString" "$INSTDIR\Uninstall.exe"
+
+    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "NoModify" 1
+    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "NoRepair" 1
+        
+
 SectionEnd
 
 Section "Uninstall"
     RMDir /r "$PROGRAMFILES\${ORG_NAME}\${APP_NAME}"
     RMDir /r "$INSTDIR"
+    RMDir /r "$SMPROGRAMS\${APP_NAME}"
+
+    Delete "$DESKTOP\${APP_NAME}.lnk"
 
     DeleteRegKey HKLM "Software\${ORG_NAME}\${APP_NAME}"
+    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
+SectionEnd
+
+Section "Desktop Shortcut" SectionS
+    SetShellVarContext current
+    SetOutPath "$INSTDIR"
+    CreateShortCut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${EXE_NAME}"
+
+    SetOutPath "$SMPROGRAMS\${APP_NAME}\"
+    CopyFiles "$DESKTOP\${APP_NAME}.lnk" "$SMPROGRAMS\${APP_NAME}\"
 SectionEnd

@@ -24,8 +24,12 @@ platforms = None
 result_folder = None
 result_name = None
 
+addLicenseToInstaller = None
+licenseFile = None
+
 development_backend_folder = None
 development_frontend_folder = None
+selfContainedFramework = None
 
 app_name = None
 app_version = None
@@ -382,7 +386,7 @@ def load_config():
     global cfg
     global platforms
     global result_folder, result_name
-    global development_backend_folder, development_frontend_folder
+    global development_backend_folder, development_frontend_folder, selfContainedFramework, addLicenseToInstaller, licenseFile
     global app_name, app_version, org_name, app_ico
 
     if os.path.exists("config.dev.json"):
@@ -407,7 +411,11 @@ def load_config():
 
     development_backend_folder = cfg.get("developmentBackendFolder", "backend")
     development_frontend_folder = cfg.get("developmentFrontendFolder", "frontend")
+    selfContainedFramework = cfg.get("selfContainedFramework", True)
 
+    addLicenseToInstaller = cfg.get("addLicenseToInstaller", False)
+    licenseFile = cfg.get("licenseFile", "LICENSE.txt")
+    
     app_name = cfg.get("appName", "LambdaFlowApp")
     app_version = cfg.get("appVersion", "1.0.0")
     app_ico = cfg.get("appIcon", "app.ico")
@@ -490,6 +498,9 @@ def build_windows_installer(results_dir, app_name, app_version, org_name, arch):
         .replace("${ORG_NAME}",    org_name)
         .replace("${SRC_DIR}",     results_dir)
         .replace("${APP_ICO}",        app_ico)
+        .replace("${MACRO_LICENSE}",  "!insertmacro MUI_PAGE_LICENSE" if addLicenseToInstaller else "")
+        .replace("${LICENSE_FILE}",   licenseFile if addLicenseToInstaller else "")
+        .replace("${EXE_NAME}", f"{result_name}.exe")
     )
 
     Path("installer.nsi").write_text(filled, encoding="utf-8")
@@ -515,7 +526,8 @@ def build_unix_installer(target, results_dir, app_name, app_version, org_name, a
         APP=app_name,
         ORG=org_name,
         VER=app_version,
-        ARCH=arch
+        ARCH=arch,
+        RESULT_NAME=result_name
     )
 
     results_dir = Path(results_dir)
@@ -605,7 +617,7 @@ def main():
     with cfg_path.open("r", encoding="utf-8") as f:
         cfg = json.load(f)
 
-    to_remove = ["platforms", "developmentBackendFolder", "developmentFrontendFolder", "resultFolder"]
+    to_remove = ["platforms", "developmentBackendFolder", "developmentFrontendFolder", "resultFolder", "selfContainedFramework", "addLicenseToInstaller", "licenseFile"]
 
     for key in to_remove:
         cfg.pop(key, None)
@@ -716,7 +728,7 @@ def main():
                 print_banner("Compiling framework...", banner_type="info")
 
                 fw_out = os.path.join("bin", plat, "framework")
-                run(f"dotnet publish lambdaflow.csproj -c Release -r {rid} -o {fw_out} -p:AssemblyName={result_name}", cwd=os.getcwd())
+                run(f"dotnet publish lambdaflow.csproj -c Release -r {rid} -o {fw_out} -p:AssemblyName={result_name} -p:SelfContained={selfContainedFramework}", cwd=os.getcwd())
 
                 out_framework = os.path.abspath(fw_out)
                 if not os.path.isdir(out_framework):
@@ -743,6 +755,7 @@ def main():
 
                 shutil.copy2("integrity.sig", os.path.join(dst_base, "integrity.sig"))
                 shutil.copy2("public.pem", os.path.join(dst_base, "public.pem"))
+
 
                 # ----- PACKAGE PROGRAM -----
 

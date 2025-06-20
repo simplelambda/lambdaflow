@@ -10,6 +10,11 @@
   "developmentBackendFolder": "backend",
   "developmentFrontendFolder": "frontend",
 
+  "addLicenseToInstaller": true,
+  "licenseFile": "license.txt",
+
+  "selfContainedFramework": true,
+
   "resultFolder": "Results",
 
   "frontendInitialHTML": "index.html",
