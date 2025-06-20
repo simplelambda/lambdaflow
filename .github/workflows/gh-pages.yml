@@ -1,5 +1,7 @@
 name: Deploy Docs
 
+permissions:
+  contents: write
 on:
   push:
     branches: [ main ]
@@ -8,7 +10,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: true
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
