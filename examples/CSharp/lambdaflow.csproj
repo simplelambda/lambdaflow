@@ -1,49 +1,73 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFrameworks>net8.0;net8.0-android;net8.0-windows</TargetFrameworks>
+		<RootNamespace>lambdaflow</RootNamespace>
 		<Version>1.0.0</Version>
 		<OutputType>Exe</OutputType>
 		<ApplicationIcon>app.ico</ApplicationIcon>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<Nullable>enable</Nullable>
 		<GenerateVersionedAssemblyInfo>false</GenerateVersionedAssemblyInfo>
 		<GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
 		<Description>LambdaFlow core library</Description>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(OS)'=='Windows_NT'">
-		<OutputType>WinExe</OutputType>
-	</PropertyGroup>
-
 	<ItemGroup>
-		<Compile Include="src/source/**/*.cs" />
+		<None Include="**\*" />
+		<Compile Include="lambdaflow/TMP/lambdaflow/source/**/*.cs" />
+		<EmbeddedResource Include ="lambdaflow/TMP/config.json" />
+		<EmbeddedResource Include ="lambdaflow/TMP/integrity.json" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<EmbeddedResource Include="config.json" />
-		<EmbeddedResource Include="integrity.json" />
-		<EmbeddedResource Include="integrity.sig" />
-		<EmbeddedResource Include="public.pem" />
 
-		<None Include="app.ico" Pack="false" />
+
+
+	<PropertyGroup>
+		<DefineConstants>$(DefineConstants);$(PlatformDefine);$(SecurityDefine)</DefineConstants>
+	</PropertyGroup>
+
+
+
+
+	<ItemGroup Condition="'$(PlatformDefine)' == 'LINUX'">
+		<Compile Remove="lambdaflow/source/**/Android*.cs" />
+		<Compile Remove="lambdaflow/source/**/Windows*.cs" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<PackageReference Include="SharpWebview" Version="0.*" />
-		<PackageReference Include="Sigstore" Version="1.0.0" Condition="'$(TargetFramework)'=='net8.0-android'" />
+
+	<ItemGroup Condition="'$(PlatformDefine)' == 'ANDROID'">
+		<Compile Remove="lambdaflow/source/**/Linux*.cs" />
+		<Compile Remove="lambdaflow/source/**/Windows*.cs" />
+
 	</ItemGroup>
 
-	
-	
-	<PropertyGroup Condition="$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux-'))">
-		<DefineConstants>LINUX;$(DefineConstants)</DefineConstants>
+
+	<ItemGroup Condition="'$(PlatformDefine)' == 'WINDOWS'">
+		<Compile Remove="lambdaflow/source/**/Android*.cs" />
+		<Compile Remove="lambdaflow/source/**/Linux*.cs" />
+
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3351.48" />
+	</ItemGroup>
+
+	<PropertyGroup Condition="'$(TargetFramework)'=='net8.0-windows'">
+		<UseWindowsForms>true</UseWindowsForms>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('windows-'))">
-		<DefineConstants>WINDOWS;$(DefineConstants)</DefineConstants>
-	</PropertyGroup>
 
-	<PropertyGroup Condition="$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('android-'))">
-		<DefineConstants>ANDROID;$(DefineConstants)</DefineConstants>
-	</PropertyGroup>
-	
+
+
+	<ItemGroup Condition="'$(SecurityDefine)' != 'MINIMAL'">
+		<Compile Remove="lambdaflow/source/Security/Strategies/MinimalStrategy.cs" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(SecurityDefine)' != 'INTEGRITY'">
+		<Compile Remove="lambdaflow/source/Security/Strategies/IntegrityStrategy.cs" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(SecurityDefine)' != 'HARDENED'">
+		<Compile Remove="lambdaflow/source/Security/Strategies/HardenedStrategy.cs" />
+	</ItemGroup>
+
 </Project>

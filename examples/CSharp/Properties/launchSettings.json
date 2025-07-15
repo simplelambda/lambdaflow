@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "LambdaFlow Build": {
+      "commandName": "Executable",
+      "executablePath": "py",
+      "commandLineArgs": "lambdaflow/buildScripts/build.py $(Configuration)",
+      "workingDirectory": "$(ProjectDir)",
+      "console": "integratedTerminal"
+    }
+  }
+}

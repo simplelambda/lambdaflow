@@ -1,9 +1,11 @@
 using System;
 using System.IO;
+using System.Runtime.Versioning;
 using System.Runtime.InteropServices;
 
 namespace LambdaFlow {
-    internal class Android : IProtector {
+    [SupportedOSPlatform("android")]
+    internal class AndroidProtector : IProtector {
         #region Imports
 
             [DllImport("libc", SetLastError = true)]
@@ -11,9 +13,9 @@ namespace LambdaFlow {
 
         #endregion
 
-        #region Internal methods
+        #region Public methods
 
-            internal void Protect(string path, ProtectionOptions options) {
+            public void Protect(string path, ProtectionOptions options) {
                 if (!File.Exists(path)) throw new FileNotFoundException(path);
 
                 uint newMode = 0;
@@ -25,7 +27,7 @@ namespace LambdaFlow {
                 if (chmod(path, newMode) != 0) throw new IOException($"chmod failed: {Marshal.GetLastWin32Error()}");
             }
 
-            internal FileStream LockFile(string path) {
+            public FileStream LockFile(string path) {
                 var fileLock = new FileStream(
                     path,
                     FileMode.Open,
@@ -38,7 +40,7 @@ namespace LambdaFlow {
                 return fileLock;
             }
 
-            internal void UnlockFile(FileStream stream) {
+            public void UnlockFile(FileStream stream) {
                 if (stream == null) throw new ArgumentNullException(nameof(stream));
 
                 stream.Unlock(0, 0);

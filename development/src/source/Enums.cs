@@ -6,6 +6,7 @@ namespace LambdaFlow {
         MACOS,
         ANDROID,
         IOS,
+        WEB,
         UNKNOWN
     }
 
@@ -14,5 +15,4 @@ namespace LambdaFlow {
         INTEGRITY,
         HARDENED
     }
-    
 }

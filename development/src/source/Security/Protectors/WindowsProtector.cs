@@ -1,18 +1,22 @@
 using System;
 using System.IO;
-using System.Security.AccessControl;
+using System.Runtime.Versioning;
 using System.Security.Principal;
+using System.Security.AccessControl;
 
 namespace LambdaFlow {
+    [SupportedOSPlatform("windows")]
     internal class WindowsProtector : IProtector {
 
-        #region Internal methods
+        #region Public methods
 
-            internal void Protect(string path, ProtectionOptions options){
+            public void Protect(string path, ProtectionOptions options){
                 if (options.RequireElevation && !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
                     throw new UnauthorizedAccessException("Administrator privileges are required");
 
-                var sec = File.GetAccessControl(path);
+                var fileInfo = new FileInfo(path);
+                var sec = fileInfo.GetAccessControl();
+
 
                 sec.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
                 var user = WindowsIdentity.GetCurrent().User!;
@@ -31,10 +35,10 @@ namespace LambdaFlow {
                     AccessControlType.Allow);
 
                 sec.AddAccessRule(rule);
-                File.SetAccessControl(path, sec);
+                fileInfo.SetAccessControl(sec);
             }
 
-            internal FileStream LockFile(string path){
+            public FileStream LockFile(string path){
                 var fileLock = new FileStream(
                     path,
                     FileMode.Open,
@@ -47,7 +51,7 @@ namespace LambdaFlow {
                 return fileLock;
             }
 
-            internal void UnlockFile(FileStream stream){
+            public void UnlockFile(FileStream stream){
                 if (stream == null) throw new ArgumentNullException(nameof(stream));
 
                 stream.Unlock(0, 0);
@@ -58,7 +62,7 @@ namespace LambdaFlow {
 
         #region Private methods
 
-        private bool IsAdministrator(){
+            private bool IsAdministrator(){
                 using var identity = WindowsIdentity.GetCurrent();
                 var principal = new WindowsPrincipal(identity);
                 return principal.IsInRole(WindowsBuiltInRole.Administrator);

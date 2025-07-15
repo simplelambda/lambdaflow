@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
@@ -12,37 +13,26 @@ using Android.Content.PM;
 using Android.Runtime;
 
 namespace LambdaFlow {
+    [SupportedOSPlatform("android")]
     internal class AndroidSigner : ISigner{
         #region Variables
 
-            private const byte[] ExpectedPublicKeyToken = new { };
-            private const string CosignPublicKeyPem = @"";
+            private const string PublicKeyPem = @"";
             private const string ExpectedApkCertSha256 = "";
 
         #endregion
 
-        #region Internal methods
+        #region Public methods
 
-            internal bool Verify(){
+            public bool Verify(){
                 var exePath = GetSelfExecutablePath();
 
-                return (VerifyStrongName(exePath) && VerifyCosignSignature(exePath) && VerifyAndroidApkSignature());
+                return (VerifyCosignSignature(exePath) && VerifyAndroidApkSignature());
             }
 
         #endregion
 
         #region Private methods
-
-            private bool VerifyStrongName(string path){
-                try{
-                    var asmName = AssemblyName.GetAssemblyName(path);
-                    var token = asmName.GetPublicKeyToken();
-                    return token != null && token.SequenceEqual(ExpectedPublicKeyToken);
-                }
-                catch{
-                    return false;
-                }
-            }
 
             private bool VerifyCosignSignature(string path){
                 byte[] signature;
@@ -63,7 +53,7 @@ namespace LambdaFlow {
                 byte[] hash = SHA256.HashData(data);
 
                 using var rsa = RSA.Create();
-                rsa.ImportFromPem(CosignPublicKeyPem.ToCharArray());
+                rsa.ImportFromPem(PublicKeyPem.ToCharArray());
 
                 return rsa.VerifyHash(
                     hash,

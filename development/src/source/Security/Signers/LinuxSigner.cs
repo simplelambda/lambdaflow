@@ -3,39 +3,28 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Diagnostics;
+using System.Runtime.Versioning;
 
 namespace LambdaFlow {
+    [SupportedOSPlatform("linux")]
     internal class LinuxSigner : ISigner{
         #region Variables
 
-            private const byte[] ExpectedPublicKeyToken = new { };
-            private const bool useAuthenticode = false;
-            private const string CosignPublicKeyPem = @"";
+            private const string PublicKeyPem = @"";
 
         #endregion
 
-        #region Internal methods
+        #region Public methods
 
-            internal bool Verify(){
+            public bool Verify(){
                 var exePath = Assembly.GetEntryAssembly()!.Location;
 
-                return (VerifyStrongName(exePath) && VerifyCosignSignature(exePath));
+                return VerifyCosignSignature(exePath);
             }
 
         #endregion
 
         #region Private methods
-
-            private bool VerifyStrongName(string path) {
-                try {
-                    var asmName = AssemblyName.GetAssemblyName(path);
-                    var token = asmName.GetPublicKeyToken();
-                    return token != null && token.SequenceEqual(ExpectedPublicKeyToken);
-                }
-                catch {
-                    return false;
-                }
-            }
 
             private bool VerifyCosignSignature(string path) {
                 byte[] signature;
@@ -56,7 +45,7 @@ namespace LambdaFlow {
                 byte[] hash = SHA256.HashData(data);
 
                 using var rsa = RSA.Create();
-                rsa.ImportFromPem(CosignPublicKeyPem.ToCharArray());
+                rsa.ImportFromPem(PublicKeyPem.ToCharArray());
 
                 return rsa.VerifyHash(
                     hash,

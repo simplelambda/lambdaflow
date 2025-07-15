@@ -1,36 +1,39 @@
-namespace Lambdaflow {
+using System.Runtime.Versioning;
+
+namespace LambdaFlow {
+    [SupportedOSPlatform("linux")]
     internal class LinuxWebView : IWebViewPlatform {
         #region Variables
 
-        public event Action<string> WebMessageReceived;
+            public event Action<string> WebMessageReceived;
 
         #endregion
 
-        #region Internal methods
+        #region Public methods
 
-        internal void Initialize(Config config) {
-            /* TODO */
-        }
+            public void Initialize(Config config) {
+                /* TODO */
+            }
 
-        internal bool CheckAvailability() {
-            /* TODO */
-        }
+            public bool CheckAvailability() {
+                /* TODO */
+            }
 
-        internal void InstallPrerequisites() {
-            /* TODO */
-        }
+            public void InstallPrerequisites() {
+                /* TODO */
+            }
 
-        internal void Navigate(string url) {
-            /* TODO */
-        }
+            public void Navigate(string url) {
+                /* TODO */
+            }
 
-        internal void SendMessageToWeb(string json) {
-            /* TODO */
-        }
+            public void SendMessageToWeb(string json) {
+                /* TODO */
+            }
 
-        internal void Start() {
-            /* TODO */
-        }
+            public void Start() {
+                /* TODO */
+            }
 
         #endregion
     }

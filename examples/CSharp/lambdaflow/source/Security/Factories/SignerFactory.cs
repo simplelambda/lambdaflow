@@ -4,9 +4,13 @@ namespace LambdaFlow{
     internal static class SignerFactory{
         internal static ISigner GetSigner(){
             return Utilities.Platform switch{
-                Platform.WINDOWS => new WindowsProtector(),
-                Platform.LINUX => new LinuxProtector(),
-                Platform.ANDROID => new AndroidProtector(),
+                #if WINDOWS
+                    Platform.WINDOWS => new WindowsSigner(),
+                #elif LINUX
+                    Platform.LINUX => new LinuxSigner(),
+                #elif ANDROID
+                    Platform.ANDROID => new AndroidSigner(),
+                #endif
                 _ => throw new PlatformNotSupportedException($"'{Utilities.Platform}' is not supported.")
             };
         }

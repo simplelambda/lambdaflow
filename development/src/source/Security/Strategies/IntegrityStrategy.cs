@@ -14,39 +14,33 @@ namespace LambdaFlow {
 
         #endregion
 
-        #region Properties
-
-            internal Config Config { get; private set; }
-
-        #endregion
-
         #region Constructors
 
             internal IntegrityStrategy() { }
 
         #endregion
 
-        #region Internal methods
+        #region Public methods
 
-            internal void ApplySecurity() {
+            public void ApplySecurity() {
                 if (!_signer.Verify()) throw new SecurityException($"Integrity failure. Executable modified.");
 
 
                 // Lock frontend.pak and backend.pak to avoid TOCTOU
 
                 var frontendPath = Path.Combine(AppContext.BaseDirectory, "frontend.pak");
-                var frontPakLock = _protector.Protect(frontendPath, new ProtectionOptions { AllowRead = true });
+                _protector.Protect(frontendPath, new ProtectionOptions { AllowRead = true });
                 var frontfs = _protector.LockFile(frontendPath);
 
                 var backendPath = Path.Combine(AppContext.BaseDirectory, "backend.pak");
-                var backPakLock = _protector.Protect(backendPath, new ProtectionOptions { AllowRead = true });
+                _protector.Protect(backendPath, new ProtectionOptions { AllowRead = true });
                 var backfs = _protector.LockFile(backendPath);
 
 
                 // Decrypt integrity.json
 
-                var integrityEncrypted = Utilities.GetEmbeddedResourceString("integrity.json");
-                var integrity = Utilities.DecryptJsonFromStream<Dictionary<string, string>>(integrityEncrypted, integrity = true);
+                var integrityEncrypted = Utilities.GetEmbeddedResourceStream("integrity.json");
+                var integrity = Utilities.DecryptJsonFromStream<Dictionary<string, string>>(integrityEncrypted, integrity: true, config: false);
 
 
                 // Verify integrity.json hashes
@@ -66,16 +60,11 @@ namespace LambdaFlow {
                     else                                    fs = new(path, FileMode.Open, FileAccess.Read, FileShare.None);
 
                     var hash = BitConverter.ToString(hasher.ComputeHash(fs)).Replace("-", "").ToLowerInvariant();
+
                     if (hash != kv.Value.ToLowerInvariant()) throw new SecurityException($"Hash mismatch: {rel}");
                 }
 
                 integrity = null;
-
-
-                // Decrypt config.json
-
-                var configEncrypted = Utilities.GetEmbeddedResourceString("config.json");
-                Config = Utilities.DecryptJsonFromStream<Config>(integrityEncrypted, integrity = false, config = true);
 
 
                 // Create backend extraction folder
@@ -93,8 +82,10 @@ namespace LambdaFlow {
                 // Unprotect backend.pak
 
                 _protector.UnlockFile(backfs);
+
+                System.Threading.Thread.Sleep(10000);
             }
 
-        #region
+        #endregion
     }
 }

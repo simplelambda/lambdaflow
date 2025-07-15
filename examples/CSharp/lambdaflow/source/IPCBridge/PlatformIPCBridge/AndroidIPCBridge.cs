@@ -1,8 +1,11 @@
-namespace Lambdaflow {
+using System.Runtime.Versioning;
+
+namespace LambdaFlow {
+    [SupportedOSPlatform("android")]
     internal class AndroidIPCBridge : IIPCBridge {
         #region Events
 
-            internal event Func<string, Task> OnProcessStdOut;
+            public event Func<string, Task>? OnProcessStdOut;
 
         #endregion
 
@@ -16,15 +19,11 @@ namespace Lambdaflow {
 
         #region Public methods
 
-            public void Dispose() {
+            public Task SendMessageToBackend(string message) {
                 /* TODO */
             }
 
-        #endregion
-
-        #region Internal methods
-
-            internal Task SendMessageToBackend(string message) {
+            public void Dispose() {
                 /* TODO */
             }
 

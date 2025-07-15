@@ -1,14 +1,19 @@
 using System;
+using System;
 
 namespace LambdaFlow {
-    internal class StrategyFactory {
-        internal IStrategy GetStrategy() {
+    internal static class StrategyFactory {
+        internal static IStrategy GetStrategy() {
             return Utilities.securityMode switch {
-                SecurityMode.MINIMAL => new MinimalStrategy(),
-                SecurityMode.INTEGRITY => new WindowsIntegrityStrategy(),
-                SecurityMode.HARDENED => new WindowsHardenedStrategy(),
-                _ => throw new NotSupportedException($"Security mode '{mode}' is not supported.")
-            }
+                #if MINIMAL
+                    SecurityMode.MINIMAL => new MinimalStrategy(),
+                #elif INTEGRITY
+                    SecurityMode.INTEGRITY => new IntegrityStrategy(),
+                #elif HARDENED
+                    SecurityMode.HARDENED => new HardenedStrategy(),
+                #endif
+                _ => throw new NotSupportedException($"Security mode '{Utilities.securityMode}' is not supported.")
+            };
         }
     }
 }

@@ -30,10 +30,11 @@ def sync_examples():
         
         shutil.copytree(framework_dir, target_lf)
 
-        build_py_src = os.path.join(repo_root, 'development', 'build.py')
-        build_py_dst = os.path.join(example_dir, 'build.py')
-        if os.path.isfile(build_py_src):
-            shutil.copy2(build_py_src, build_py_dst)
+        frameworkProperties = os.path.join(repo_root, 'development', 'Properties')
+        frameworkProperties_dst = os.path.join(example_dir, 'Properties')
+
+        if os.path.isdir(frameworkProperties):
+            shutil.copytree(frameworkProperties, frameworkProperties_dst)
 
         csproj_src = os.path.join(repo_root, 'development', 'lambdaflow.csproj')
         csproj_dst = os.path.join(example_dir, 'lambdaflow.csproj')

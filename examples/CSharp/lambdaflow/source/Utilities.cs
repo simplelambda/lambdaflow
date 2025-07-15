@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Text;
+using System.Security;
 using System.Text.Json;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -11,9 +13,11 @@ namespace LambdaFlow {
 
             internal readonly static Platform Platform = GetPlatform();
 
+            internal readonly static string signPath = "";
+
             internal readonly static SecurityMode securityMode = SecurityMode.INTEGRITY;
 
-            internal readonly static byte[] RandomIntegritKey = { };
+            internal readonly static byte[] RandomIntegrityKey = { };
             internal readonly static byte[] RandomConfigKey = { };
 
         #endregion
@@ -22,14 +26,14 @@ namespace LambdaFlow {
 
             internal static Stream? GetEmbeddedResourceStream(string resourceName) {
                 var assembly = Assembly.GetExecutingAssembly();
-                var var resName = $"lambdaflow.{resourceName}";
+                var resName = $"lambdaflow.lambdaflow.TMP.{resourceName}";
 
                 return assembly.GetManifestResourceStream(resName) ?? throw new FileNotFoundException($"Resource '{resName}' not found.");
             }
 
-            public string GetEmbeddedResourceString(string resourceName){
+            public static string GetEmbeddedResourceString(string resourceName){
                 var assembly = Assembly.GetExecutingAssembly();
-                var var resName = $"lambdaflow.{resourceName}";
+                var resName = $"lambdaflow.lambdaflow.TMP.{resourceName}";
                 var stream = assembly.GetManifestResourceStream(resName) ?? throw new FileNotFoundException($"Resource '{resName}' not found.");
 
                 if (stream.CanSeek) stream.Seek(0, SeekOrigin.Begin);
@@ -41,7 +45,7 @@ namespace LambdaFlow {
             public static T DecryptJsonFromStream<T>(Stream encryptedStream, bool integrity = true, bool config = false){
                 if (encryptedStream == null) throw new ArgumentNullException(nameof(encryptedStream));
 
-                byte[] key = integrity ? RandomIntegritKey : config ? RandomConfigKey : null;
+                byte[] key = integrity ? RandomIntegrityKey : RandomConfigKey;
 
                 if (key == null || key.Length != 32) throw new ArgumentException("AES-GCM Key must have 32 bytes.", nameof(key));
 
@@ -60,19 +64,18 @@ namespace LambdaFlow {
                 byte[] plain = new byte[ciphertext.Length];
 
                 try{
-                    using var aes = new AesGcm(key);
+                    using var aes = new AesGcm(key, 16);
                     aes.Decrypt(nonce, ciphertext, tag, plain);
                 }
                 catch (CryptographicException ex){
                     throw new SecurityException("AES-GCM decryption failed.", ex);
                 }
 
-                var reader = new Utf8JsonReader(plain);
-
                 CryptographicOperations.ZeroMemory(blob);
-                CryptographicOperations.ZeroMemory(plain);
 
-                T result = JsonSerializer.Deserialize<T>(ref reader) ?? throw new InvalidDataException("No se pudo deserializar el JSON descifrado.");
+                T result = JsonSerializer.Deserialize<T>(plain) ?? throw new InvalidDataException("No se pudo deserializar el JSON descifrado.");
+
+                CryptographicOperations.ZeroMemory(plain);
 
                 return result;
             }
@@ -81,7 +84,7 @@ namespace LambdaFlow {
 
         #region Private methods
 
-        private Platform GetPlatform(){
+            private static Platform GetPlatform(){
                 if (OperatingSystem.IsBrowser())                                   return Platform.WEB;
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))           return Platform.WINDOWS;
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))             return Platform.LINUX;

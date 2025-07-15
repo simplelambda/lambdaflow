@@ -1,5 +1,5 @@
 {
-  // GENERAL FIELDS
+
 
   "appName": "CSharpTest",
   "appVersion": "1.0.0",
@@ -8,7 +8,8 @@
 
   "includeVersionInResultName": true,
 
-  // BUILD-TIME FIELDS
+
+  "securityMode": "Integrity",
 
   "developmentBackendFolder": "backend",
   "developmentFrontendFolder": "frontend",
@@ -28,15 +29,16 @@
         "x64": {
           "compileCommand": "dotnet publish -c Release -r win-x64",
           "compileDirectory": "bin/Release/net8.0/win-x64/publish",
-          "ignore": true,
+          "useAuthenticode": true,
           "package": true
         },
 
         "x86": {
           "compileCommand": "dotnet publish -c Release -r win-x86",
           "compileDirectory": "bin/Release/net8.0/win-x86/publish",
-          "ignore": true,
-          "package": true
+          "useAuthenticode": true,
+          "package": true,
+          "ignore": true
         }
       }
     },
@@ -76,7 +78,7 @@
     }
   },
 
-  // RUN-TIME FIELDS
+
 
   "frontendInitialHTML": "index.html",
 

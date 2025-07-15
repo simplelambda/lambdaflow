@@ -1,26 +1,20 @@
+using System.Security;
+
 namespace LambdaFlow {
     internal class MinimalStrategy : IStrategy {
         #region Variables
 
-            protected readonly ISigner _signer = SignerFactory.GetSigner();
-            protected readonly IResourceProtector _protector = ResourceProtectorFactory.GetResourceProtector();
+            private readonly ISigner _signer = SignerFactory.GetSigner();
+            private readonly IProtector _protector = ProtectorFactory.GetProtector();
 
         #endregion
 
-        #region Properties
+        #region Public methods
 
-            internal Config Config { get; private set; }
-
-        #endregion
-
-        #region Internal methods
-
-            internal void ApplySecurity() {
+            public void ApplySecurity() {
                 if (!_signer.Verify()) throw new SecurityException($"Integrity failure. Executable modified.");
-
-                Config = Config.CreateConfig(Utilities.GetEmbeddedResourceStream("config.json"));
             }
 
-        #region
+        #endregion
     }
 }

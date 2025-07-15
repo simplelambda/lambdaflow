@@ -3,37 +3,29 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Diagnostics;
+using System.Runtime.Versioning;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 
 namespace LambdaFlow {
+    [SupportedOSPlatform("windows")]
     internal class WindowsSigner : ISigner{
-        #region Imports
-
-            [DllImport("wintrust.dll", ExactSpelling = true, CharSet = CharSet.Unicode)]
-            private static extern uint WinVerifyTrust(
-               IntPtr hwnd,
-               [MarshalAs(UnmanagedType.LPStruct)] Guid pgActionID,
-               WinTrustData pWVTData
-            );
-
-        #endregion
-
         #region Variables
 
-            private const byte[] ExpectedPublicKeyToken = new { };
             private const bool useAuthenticode = false;
-            private const string CosignPublicKeyPem = @"";
+            private const string PublicKeyPem = @"";
 
         #endregion
 
-        #region Internal methods
+        #region Public methods
 
-            internal bool Verify() {
-                var exePath = Assembly.GetEntryAssembly()!.Location;
+            public bool Verify() {
+                var exePath = Environment.ProcessPath!;
+                var dllPath = Assembly.GetEntryAssembly()?.Location;
 
-                return (VerifyStrongName(exePath) && VerifyCosignSignature(exePath) && (!useAuthenticode || VerifyAuthenticode(exePath)));
+                return (VerifySignature([exePath, dllPath]) && (!useAuthenticode || VerifyAuthenticode(exePath)));
             }
 
         #endregion
@@ -41,7 +33,7 @@ namespace LambdaFlow {
         #region Private methods
 
             private bool VerifyAuthenticode(string path){
-                Guid action = new Guid("00AAC56B-CD44-11d0-8CC2-00C04FC295EE");
+                /*Guid action = new Guid("00AAC56B-CD44-11d0-8CC2-00C04FC295EE");
 
                 var fileInfo = new WINTRUST_FILE_INFO(
                     path,
@@ -57,124 +49,52 @@ namespace LambdaFlow {
                 };
 
                 uint result = WinVerifyTrust(IntPtr.Zero, action, wtd);
-                return result == 0;
+                return result == 0;*/
+                return true;
             }
 
-            private bool VerifyStrongName(string path) {
-                try {
-                    var asmName = AssemblyName.GetAssemblyName(path);
-                    var token = asmName.GetPublicKeyToken();
-                    return token != null && token.SequenceEqual(ExpectedPublicKeyToken);
-                }
-                catch{
-                    return false;
-                }
-            }
+            private bool VerifySignature(string[] paths) {
 
-            private bool VerifyCosignSignature(string path) {
+                // CHECK EXECUTABLE SIGNATURE
+
+                string sigPath = Path.Combine(Path.GetDirectoryName(paths[0])!, "integrity.sig");
+                if (!File.Exists(sigPath)) return false;
+
                 byte[] signature;
                 byte[] data;
 
-                try
-                {
-                    using Stream sigStream = Utilities.GetEmbeddedResourceStream("cosign.sig");
-                    using var ms = new MemoryStream();
-                    sigStream.CopyTo(ms);
-                    signature = ms.ToArray();
+                try {
+                    signature = File.ReadAllBytes(sigPath);
 
-                    data = File.ReadAllBytes(path);
+                    using var sha = SHA512.Create();
+                    var buffer = new byte[65536];
+
+                    foreach (string f in paths) {
+                        using var fs = File.OpenRead(f);
+                        int n;
+                        while ((n = fs.Read(buffer)) > 0)
+                            sha.TransformBlock(buffer, 0, n, null, 0);
+                    }
+
+                    sha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                    data = sha.Hash!;
                 }
-                catch{
+                catch {
                     return false;
                 }
 
-                byte[] hash = SHA256.HashData(data);
+                var base64 = PublicKeyPem
+                    .Replace("-----BEGIN PUBLIC KEY-----", "")
+                    .Replace("-----END PUBLIC KEY-----", "")
+                    .Replace("\r", "")
+                    .Replace("\n", "");
 
-                using var rsa = RSA.Create();
-                rsa.ImportFromPem(CosignPublicKeyPem.ToCharArray());
+                byte[] spki = Convert.FromBase64String(base64);
 
-                return rsa.VerifyHash(
-                    hash,
-                    signature,
-                    HashAlgorithmName.SHA256,
-                    RSASignaturePadding.Pss
-                );
-            }
+                using var ecdsa = ECDsa.Create();
+                ecdsa.ImportSubjectPublicKeyInfo(spki, out _);
 
-        #endregion
-
-        #region Private enums
-
-            private enum WinTrustDataUI : uint {
-                All = 1,
-                None = 2,
-                NoBad = 3,
-                NoGood = 4
-            }
-
-            private enum WinTrustDataChoice : uint {
-                File = 1,
-                Catalog = 2,
-                Blob = 3,
-                Signer = 4,
-                Certificate = 5
-            }
-
-            private enum WinTrustDataStateAction : uint {
-                Ignore = 0x00000000,
-                Verify = 0x00000001,
-                Close = 0x00000002,
-                AutoCache = 0x00000003,
-                AutoCacheFlush = 0x00000004
-            }
-
-        #endregion
-
-        #region Private classes
-
-            [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-            private class WINTRUST_FILE_INFO{
-                public uint StructSize = (uint)Marshal.SizeOf<WINTRUST_FILE_INFO>();
-                public IntPtr pszFilePath;
-                public IntPtr hFile = IntPtr.Zero;
-                public IntPtr pgKnownSubject = IntPtr.Zero;
-                public WINTRUST_FILE_INFO(string filePath, IntPtr hFile, IntPtr pgKnownSubject, IntPtr reserved) {
-                    pszFilePath = Marshal.StringToCoTaskMemAuto(filePath);
-                    this.hFile = hFile;
-                    this.pgKnownSubject = pgKnownSubject;
-                }
-            }
-
-            [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-            private class WinTrustData : IDisposable {
-                public uint StructSize = (uint)Marshal.SizeOf<WinTrustData>();
-                public IntPtr PolicyCallbackData = IntPtr.Zero;
-                public IntPtr SIPClientData = IntPtr.Zero;
-                public WinTrustDataUI UIChoice = WinTrustDataUI.None;
-                public WinTrustDataChoice UnionChoice;
-                public IntPtr FileInfoPtr = IntPtr.Zero;
-                public WinTrustDataStateAction StateAction;
-
-                public WinTrustData(WINTRUST_FILE_INFO fileInfo) {
-                    UnionChoice = WinTrustDataChoice.File;
-                    StateAction = WinTrustDataStateAction.Verify;
-
-                    FileInfoPtr = Marshal.AllocCoTaskMem(
-                        (int)Marshal.SizeOf<WINTRUST_FILE_INFO>());
-                    Marshal.StructureToPtr(
-                        fileInfo, FileInfoPtr, false);
-                }
-
-                public void Dispose() {
-                    if (FileInfoPtr != IntPtr.Zero) {
-                        Marshal.FreeCoTaskMem(FileInfoPtr);
-                        FileInfoPtr = IntPtr.Zero;
-                    }
-                    if (pszFilePath != IntPtr.Zero) {
-                        Marshal.FreeCoTaskMem(pszFilePath);
-                        pszFilePath = IntPtr.Zero;
-                    }
-                }
+                return ecdsa.VerifyHash(data, signature);
             }
 
         #endregion

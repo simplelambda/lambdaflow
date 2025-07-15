@@ -1,26 +1,30 @@
 using System;
 using System.IO;
 using System.Diagnostics;
+using System.Threading.Tasks;
+using System.Runtime.Versioning;
+
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.WinForms;
 using Microsoft.Web.WebView2.Core;
 
-namespace Lambdaflow {
+namespace LambdaFlow {
+    [SupportedOSPlatform("windows")]
     internal class WindowsWebView : IWebViewPlatform {
         #region Variables
 
-            internal event Action<string> WebMessageReceived;
+            public event Action<string> WebMessageReceived;
 
             private WebView2? _view;
             private Form? _host;
 
         #endregion
 
-        #region Internal methods
+        #region Public methods
 
-            internal void Initialize(Config config) {
+            public async void Initialize(Config config) {
                 _host = new Form{
-                    Text = config?.WindowTitle ?? "LambdaFlow app",
+                    Text = config?.Window.Title ?? "LambdaFlow app",
                     WindowState = FormWindowState.Maximized,
                     StartPosition = FormStartPosition.CenterScreen
                 };
@@ -31,18 +35,18 @@ namespace Lambdaflow {
                 var env = await CoreWebView2Environment.CreateAsync();
                 await _view.EnsureCoreWebView2Async(env);
 
-                _view.CoreWebView2.AddWebResourceRequestedFilter( uri: "https://app/*", resourceContext: CoreWebView2WebResourceContext.All);
-                _view.CoreWebView2.WebResourceRequested += HandlePakRequest;
+                _view.CoreWebView2.AddWebResourceRequestedFilter( uri: "https://app/*", CoreWebView2WebResourceContext.All);
+                //_view.CoreWebView2.WebResourceRequested += HandlePakRequest; AÑADIR PAK REQUEST HANDLER AQUÍ
 
-                await InjectBridgeAsync();
+                //await InjectBridgeAsync();  REVISAR
                 _view.CoreWebView2.WebMessageReceived += (_, e) => WebMessageReceived?.Invoke(e.WebMessageAsJson);
 
-                Navigate(config?.StartPage ?? "index.html");
+                Navigate(config?.FrontendInitialHTML ?? "index.html");
             }
 
-            internal bool CheckAvailability() => !string.IsNullOrEmpty(CoreWebView2Environment.GetAvailableBrowserVersionString());
+            public bool CheckAvailability() => !string.IsNullOrEmpty(CoreWebView2Environment.GetAvailableBrowserVersionString());
 
-            internal void InstallPrerequisites() {
+            public void InstallPrerequisites() {
                 var installerUrl = "https://go.microsoft.com/fwlink/p/?LinkId=2124703";
                 var tmp = Path.Combine(Path.GetTempPath(), "MicrosoftEdgeWebView2Bootstrapper.exe");
                 using (var wc = new System.Net.WebClient()) wc.DownloadFile(installerUrl, tmp);
@@ -55,10 +59,10 @@ namespace Lambdaflow {
                 Process.Start(psi)!.WaitForExit();
             }
 
-            internal void Navigate(string url) {
+            public void Navigate(string url) {
                 if (_view is null || _view.CoreWebView2 is null) return;
 
-                if (urlOrHtml.TrimStart().StartsWith("<", StringComparison.Ordinal)){
+                /*if (urlOrHtml.TrimStart().StartsWith("<", StringComparison.Ordinal)){
                     _view.NavigateToString(urlOrHtml);
                     return;
                 }
@@ -67,12 +71,12 @@ namespace Lambdaflow {
                 else{
                     var safePath = urlOrHtml.TrimStart('/');
                     _view.CoreWebView2.Navigate($"https://app/{safePath}");
-                }
+                }*/
             }
 
-            internal void SendMessageToWeb(string json) => _view?.CoreWebView2?.PostWebMessageAsJson(json);
+            public void SendMessageToWeb(string json) => _view?.CoreWebView2?.PostWebMessageAsJson(json);
 
-            internal void Start() {
+            public void Start() {
                 if (_host is null) throw new InvalidOperationException("Initialize must be called first.");
                 Application.EnableVisualStyles();
                 Application.Run(_host);

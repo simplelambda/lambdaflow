@@ -1,4 +1,7 @@
-namespace Lambdaflow {
+ing System.Runtime.Versioning;
+
+namespace LambdaFlow {
+    [SupportedOSPlatform("android")]
     internal class AndroidWebView : IWebViewPlatform {
         #region Variables
 
@@ -6,29 +9,29 @@ namespace Lambdaflow {
 
         #endregion
 
-        #region Internal methods
+        #region Public methods
 
-            internal void Initialize(Config config) {
+            public void Initialize(Config config) {
                 /* TODO */
             }
 
-            internal bool CheckAvailability() {
+            public bool CheckAvailability() {
                 /* TODO */
             }
 
-            internal void InstallPrerequisites() {
+            public void InstallPrerequisites() {
                 /* TODO */
             }
 
-            internal void Navigate(string url) {
+            public void Navigate(string url) {
                 /* TODO */
             }
 
-            internal void SendMessageToWeb(string json) {
+            public void SendMessageToWeb(string json) {
                 /* TODO */
             }
 
-            internal void Start() {
+            public void Start() {
                 /* TODO */
             }
 
