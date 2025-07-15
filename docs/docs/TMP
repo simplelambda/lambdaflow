@@ -1,0 +1,90 @@
+﻿1. Usage Guide
+1.1 Quickstart
+
+Install the framework
+
+Scaffold a new app
+
+Build & run on Windows/Linux/macOS
+
+1.2 Configuration
+
+config.json schema
+
+Frontend vs. Backend fields
+
+Extending build targets (x64, ARM64, etc.)
+
+1.3 IPC Examples
+
+Sending messages from JS → C#
+
+Returning responses
+
+Error handling patterns
+
+1.4 Packaging & Installers
+
+Self-contained single-file publishes
+
+Bundling installers (NSIS, makeself)
+
+Creating shortcuts & desktop entries
+
+1.5 Troubleshooting
+
+Common errors (missing .NET, permission issues)
+
+Debug tips (enable --console, log levels)
+
+2. Technical Reference
+2.1 Architecture Overview
+
+High-level flow: build → embed → verify → extract → run
+
+Data flow diagram
+
+2.2 Security Model
+
+Integrity manifest & signature
+
+Two-phase directory hardening
+
+CSP & fetch-shim
+
+ACL vs. chmod strategies
+
+2.3 Core Components
+
+SecurityManager: locking, ACL/chmod calls, cleanup
+
+IPCBridge: process launch, WorkingDirectory, async pipe handling
+
+WebViewHost: ZIP binding, app:// loader, CSP injection
+
+2.4 Build & CI
+
+build.py walkthrough
+
+Multi-RID dotnet publish flags
+
+GitHub Actions: compile, test, release, docs deploy
+
+2.5 Contributing
+
+Developer workflow
+
+Code style & linting
+
+Writing tests for cross-OS scenarios
+
+2.6 API Reference
+
+Public classes & methods in the LambdaFlow namespace
+
+Constructor arguments, extension points
+
+3 Bonus sections
+Changelog (changelog.md) for release notes.
+
+ROADMAP if you want to outline upcoming features.

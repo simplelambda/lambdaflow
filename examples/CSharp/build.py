@@ -392,9 +392,7 @@ def load_config():
     if os.path.exists("config.dev.json"):
         if os.path.exists("config.json"):
             os.remove("config.json")
-            os.rename("config.dev.json", "config.json")
-        else:
-            os.rename("config.dev.json", "config.json")
+        os.rename("config.dev.json", "config.json")
 
     os.rename("config.json", "config.dev.json")
 
@@ -555,82 +553,82 @@ def build_unix_installer(target, results_dir, app_name, app_version, org_name, a
 
 def main():
     global developer_so_dist
-
-    if(developer_so == "linux"):
-        developer_so_dist = obtain_linux_dist()
-
-    check_dependencies()
-
-    print_banner("PRECOMPILING TASKS")
-
-    # ----- READ CONFIG.JSON -----
-
-    print_banner("Loading config from config.json", banner_type="info")
-
-    load_config()
-
-    # ----- CREATION OF THE RESULTS FOLDER -----
-
-    print_banner(f"Creating results folder {result_folder}", banner_type="info")
-
-    result_root = os.path.abspath(result_folder)
-    if os.path.isdir(result_root):
-        shutil.rmtree(result_root)
-
-    os.makedirs(result_root, exist_ok=True)
-
-    # ----- CLEAN ROOT bin / obj FOLDERS -----
-
-    print_banner("Cleaning framework folders", banner_type="info")
-
-    for d in ("bin", "obj"):
-        if os.path.isdir(d):
-            shutil.rmtree(d, ignore_errors=True)
-
-    # ----- PREBUILD SNAPSHOT IN CASE OF FAILURE -----
-
-    print_banner("Saving backend status...", banner_type="info")
-
-    backend_cwd = os.path.abspath(development_backend_folder)
-    initial_backend = set()
-    for root, dirs, files in os.walk(backend_cwd):
-        for name in dirs + files:
-            rel = os.path.relpath(os.path.join(root, name), backend_cwd)
-            initial_backend.add(rel)
-
-    # ----- PACKAGE FRONTEND INTO PAK -----
-
-    print_banner('Packaging frontend into frontend.pak...', banner_type="info")
-
-    fr_pak = 'frontend.pak'
-    if os.path.exists(fr_pak): os.remove(fr_pak)
-    with zipfile.ZipFile(fr_pak, 'w', zipfile.ZIP_DEFLATED) as zf:
-        for root, dirs, files in os.walk(development_frontend_folder):
-            for fn in files:
-                abs_fn = os.path.join(root, fn)
-                rel = os.path.relpath(abs_fn, development_frontend_folder)
-                zf.write(abs_fn, rel)
-
-    # ----- CREATION OF NEW CONFIG.JSON -----
-
-    cfg_path = Path("config.dev.json")
-    with cfg_path.open("r", encoding="utf-8") as f:
-        cfg = json.load(f)
-
-    to_remove = ["platforms", "developmentBackendFolder", "developmentFrontendFolder", "resultFolder", "selfContainedFramework", "addLicenseToInstaller", "licenseFile"]
-
-    for key in to_remove:
-        cfg.pop(key, None)
-
-    embed_path = Path("config.json")
-    with embed_path.open("w", encoding="utf-8") as f:
-        json.dump(cfg, f, indent=2, ensure_ascii=False)
-
-    # ----- COMPILATION OF EACH PLATFORM -----
-
-    print_banner("Compiling for each platform")
-
     try:
+
+        if(developer_so == "linux"):
+            developer_so_dist = obtain_linux_dist()
+
+        check_dependencies()
+
+        print_banner("PRECOMPILING TASKS")
+
+        # ----- READ CONFIG.JSON -----
+
+        print_banner("Loading config from config.json", banner_type="info")
+
+        load_config()
+
+        # ----- CREATION OF THE RESULTS FOLDER -----
+
+        print_banner(f"Creating results folder {result_folder}", banner_type="info")
+
+        result_root = os.path.abspath(result_folder)
+        if os.path.isdir(result_root):
+            shutil.rmtree(result_root)
+
+        os.makedirs(result_root, exist_ok=True)
+
+        # ----- CLEAN ROOT bin / obj FOLDERS -----
+
+        print_banner("Cleaning framework folders", banner_type="info")
+
+        for d in ("bin", "obj"):
+            if os.path.isdir(d):
+                shutil.rmtree(d, ignore_errors=True)
+
+        # ----- PREBUILD SNAPSHOT IN CASE OF FAILURE -----
+
+        print_banner("Saving backend status...", banner_type="info")
+
+        backend_cwd = os.path.abspath(development_backend_folder)
+        initial_backend = set()
+        for root, dirs, files in os.walk(backend_cwd):
+            for name in dirs + files:
+                rel = os.path.relpath(os.path.join(root, name), backend_cwd)
+                initial_backend.add(rel)
+
+        # ----- PACKAGE FRONTEND INTO PAK -----
+
+        print_banner('Packaging frontend into frontend.pak...', banner_type="info")
+
+        fr_pak = 'frontend.pak'
+        if os.path.exists(fr_pak): os.remove(fr_pak)
+        with zipfile.ZipFile(fr_pak, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for root, dirs, files in os.walk(development_frontend_folder):
+                for fn in files:
+                    abs_fn = os.path.join(root, fn)
+                    rel = os.path.relpath(abs_fn, development_frontend_folder)
+                    zf.write(abs_fn, rel)
+
+        # ----- CREATION OF NEW CONFIG.JSON -----
+
+        cfg_path = Path("config.dev.json")
+        with cfg_path.open("r", encoding="utf-8") as f:
+            cfg = json.load(f)
+
+        to_remove = ["platforms", "developmentBackendFolder", "developmentFrontendFolder", "resultFolder", "selfContainedFramework", "addLicenseToInstaller", "licenseFile"]
+
+        for key in to_remove:
+            cfg.pop(key, None)
+
+        embed_path = Path("config.json")
+        with embed_path.open("w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2, ensure_ascii=False)
+
+        # ----- COMPILATION OF EACH PLATFORM -----
+
+        print_banner("Compiling for each platform")
+    
         for plat, info in platforms.items():
             archs = info.get("archs", {})
 
@@ -655,9 +653,11 @@ def main():
                 print_banner("Compiling backend...", banner_type="info")
 
                 run(cmd, cwd=backend_cwd)
-                out_backend = os.path.join(backend_cwd, "bin")
+                out_backend = os.path.join(backend_cwd, arch_cfg.get("compileDirectory", "bin"))
+
                 if not os.path.isdir(out_backend):
                     raise RuntimeError(f"ERROR: Expected backend output in '{out_backend}' but not found.")
+          
 
                 # ----- PACKAGE BACKEND INTO PAK -----
 
@@ -815,6 +815,11 @@ def main():
 
         if os.path.isdir(os.path.join("obj")):
             shutil.rmtree(os.path.join("obj"))
+
+        if os.path.exists("config.dev.json"):
+            if os.path.exists("config.json"):
+                os.remove("config.json")
+            os.rename("config.dev.json", "config.json")
 
         for arte in (
             "integrity.json",

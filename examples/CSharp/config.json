@@ -1,11 +1,14 @@
 {
+  // GENERAL FIELDS
+
   "appName": "CSharpTest",
   "appVersion": "1.0.0",
   "organizationName": "SimpleLambda",
-
   "appIcon": "app.ico",
 
   "includeVersionInResultName": true,
+
+  // BUILD-TIME FIELDS
 
   "developmentBackendFolder": "backend",
   "developmentFrontendFolder": "frontend",
@@ -17,26 +20,22 @@
 
   "resultFolder": "Results",
 
-  "frontendInitialHTML": "index.html",
-
-  "window": {
-    "title": "CSharpTest",
-    "width": 800,
-    "height": 600
-  },
-
   "platforms": {
 
     "windows": {
       "archs": {
 
         "x64": {
-          "compileCommand": "dotnet publish -c Release -r win-x64 -o bin",
+          "compileCommand": "dotnet publish -c Release -r win-x64",
+          "compileDirectory": "bin/Release/net8.0/win-x64/publish",
+          "ignore": true,
           "package": true
         },
 
         "x86": {
-          "compileCommand": "dotnet publish -c Release -r win-x86 -o bin",
+          "compileCommand": "dotnet publish -c Release -r win-x86",
+          "compileDirectory": "bin/Release/net8.0/win-x86/publish",
+          "ignore": true,
           "package": true
         }
       }
@@ -47,11 +46,13 @@
 
         "x64": {
           "compileCommand": "dotnet publish -c Release -r linux-x64 -o bin",
+          "compileDirectory": "bin/Release/net8.0/linux-x64",
           "package": true
         },
 
         "arm64": {
           "compileCommand": "dotnet publish -c Release -r linux-arm64 -o bin",
+          "compileDirectory": "bin/Release/net8.0/linux-arm64",
           "package": true
         }
       }
@@ -62,15 +63,30 @@
 
         "x64": {
           "compileCommand": "dotnet publish -c Release -r osx-x64 -o bin",
+          "compileDirectory": "bin/Release/net8.0/osx-x64",
           "package": true
         },
 
         "arm64": {
           "compileCommand": "dotnet publish -c Release -r osx-arm64 -o bin",
+          "compileDirectory": "bin/Release/net8.0/osx-arm64",
           "package": true
         }
       }
     }
+  },
 
+  // RUN-TIME FIELDS
+
+  "frontendInitialHTML": "index.html",
+
+  "window": {
+    "title": "CSharpTest",
+    "width": 800,
+    "height": 600,
+    "minWidth": 400,
+    "minHeight": 300,
+    "maxWidth": 1920,
+    "maxHeight": 1080
   }
 }

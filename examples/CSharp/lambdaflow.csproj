@@ -4,7 +4,6 @@
 		<Version>1.0.0</Version>
 		<OutputType>Exe</OutputType>
 		<ApplicationIcon>app.ico</ApplicationIcon>
-		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 		<GenerateVersionedAssemblyInfo>false</GenerateVersionedAssemblyInfo>
 		<GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
@@ -16,11 +15,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Compile Include="lambdaflow/Config.cs" />
-		<Compile Include="lambdaflow/IPCBridge.cs" />
-		<Compile Include="lambdaflow/Program.cs" />
-		<Compile Include="lambdaflow/WebViewHost.cs" />
-		<Compile Include="lambdaflow/SecurityManager.cs" />
+		<Compile Include="src/source/**/*.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -34,5 +29,21 @@
 
 	<ItemGroup>
 		<PackageReference Include="SharpWebview" Version="0.*" />
+		<PackageReference Include="Sigstore" Version="1.0.0" Condition="'$(TargetFramework)'=='net8.0-android'" />
 	</ItemGroup>
+
+	
+	
+	<PropertyGroup Condition="$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux-'))">
+		<DefineConstants>LINUX;$(DefineConstants)</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('windows-'))">
+		<DefineConstants>WINDOWS;$(DefineConstants)</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('android-'))">
+		<DefineConstants>ANDROID;$(DefineConstants)</DefineConstants>
+	</PropertyGroup>
+	
 </Project>

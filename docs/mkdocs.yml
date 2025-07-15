@@ -2,5 +2,55 @@ site_name: Lambdaflow
 site_description: "Secure C# polyglot framework—any backend, modern WebView UI"
 theme:
   name: material
+  language: en
 nav:
   - Home: index.md
+
+  - Usage Guide:
+    - Quickstart: usage/quickstart.md
+    - Configuration: usage/configuration.md
+    - IPC Examples: usage/ipc-examples.md
+    - Packaging & Installers: usage/packaging.md
+    - Troubleshooting: usage/troubleshooting.md
+
+  - Technical Reference:
+    - Architecture Overview: tech/architecture.md
+    - Security Model: tech/security.md
+    - Core Components:
+      - SecurityManager: tech/components/security-manager.md
+      - IPCBridge: tech/components/ipc-bridge.md
+      - WebViewHost: tech/components/webview-host.md
+    - Build & CI: tech/build-ci.md
+    - Contributing: tech/contributing.md
+    - API Reference: tech/api.md
+
+  - Changelog: changelog.md
+plugins:
+  - i18n:
+      default_language: en
+      languages:
+        en: English
+        es: Español
+      nav_translations:
+        es:
+          Home: Inicio
+
+          "Usage Guide": "Guía de uso"
+          Quickstart: "Primeros pasos"
+          Configuration: "Configuración"
+          "IPC Examples": "Ejemplos IPC"
+          "Packaging & Installers": "Empaquetado e instaladores"
+          Troubleshooting: "Resolución de problemas"
+
+          "Technical Reference": "Referencia técnica"
+          "Architecture Overview": "Visión general de la arquitectura"
+          "Security Model": "Modelo de seguridad"
+          "Core Components": "Componentes core"
+          SecurityManager: "Gestor de seguridad"
+          IPCBridge: "Puente IPC"
+          WebViewHost: "Host de WebView"
+          "Build & CI": "Build y CI"
+          Contributing: "Contribuir"
+          "API Reference": "Referencia API"
+
+          Changelog: "Historial de cambios"
