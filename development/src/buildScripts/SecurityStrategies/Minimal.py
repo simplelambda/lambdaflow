@@ -1,4 +1,6 @@
-from Utilities import *
+from SecurityStrategies.Strategy import Strategy
+from Utilities.Utilities         import *
 
-def minimal_modify_framework(plat):
-	inject_global_variable("lambdaflow/TMP/lambdaflow/source/Utilities.cs", "securityMode", "SecurityMode.MINIMAL")
+class Minimal(Strategy):
+	def Apply(self):
+		inject_global_variable("lambdaflow/TMP/lambdaflow/source/Config.cs", "SecurityMode", "SecurityMode.MINIMAL")

@@ -4,21 +4,17 @@ using System.Text;
 using System.Security;
 using System.Text.Json;
 using System.Reflection;
+using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Runtime.InteropServices;
 
 namespace LambdaFlow {
     internal static class Utilities {
-        #region Variables
-
-            internal readonly static Platform Platform = GetPlatform();
+        #region Variables            
 
             internal readonly static string signPath = "";
 
-            internal readonly static SecurityMode securityMode = SecurityMode.INTEGRITY;
-
             internal readonly static byte[] RandomIntegrityKey = { };
-            internal readonly static byte[] RandomConfigKey = { };
 
         #endregion
 
@@ -31,7 +27,7 @@ namespace LambdaFlow {
                 return assembly.GetManifestResourceStream(resName) ?? throw new FileNotFoundException($"Resource '{resName}' not found.");
             }
 
-            public static string GetEmbeddedResourceString(string resourceName){
+            internal static string GetEmbeddedResourceString(string resourceName){
                 var assembly = Assembly.GetExecutingAssembly();
                 var resName = $"lambdaflow.lambdaflow.TMP.{resourceName}";
                 var stream = assembly.GetManifestResourceStream(resName) ?? throw new FileNotFoundException($"Resource '{resName}' not found.");
@@ -42,8 +38,8 @@ namespace LambdaFlow {
                 return reader.ReadToEnd();
             }
 
-            public static T DecryptJsonFromStream<T>(Stream encryptedStream, bool integrity = true, bool config = false){
-                if (encryptedStream == null) throw new ArgumentNullException(nameof(encryptedStream));
+            internal static T DecryptJsonFromStream<T>(Stream encryptedStream, bool integrity = true, bool config = false){
+                /*if (encryptedStream == null) throw new ArgumentNullException(nameof(encryptedStream));
 
                 byte[] key = integrity ? RandomIntegrityKey : RandomConfigKey;
 
@@ -77,24 +73,56 @@ namespace LambdaFlow {
 
                 CryptographicOperations.ZeroMemory(plain);
 
-                return result;
+                return result;*/
+
+                return JsonSerializer.Deserialize<T>(encryptedStream) ?? throw new InvalidDataException("Failed to deserialize JSON from stream.");
+        }
+
+            internal static string GetMimeType(string path) {
+                var ext = Path.GetExtension(path);
+
+                return ext switch{
+                    ".html"  => "text/html",
+                    ".htm"   => "text/html",
+                    ".css"   => "text/css",
+                    ".js"    => "application/javascript",
+                    ".json"  => "application/json",
+                    ".otf"   => "application/vnd.ms-fontobject",
+                    ".xml"   => "application/xml",
+                    ".png"   => "image/png",
+                    ".jpg"   => "image/jpeg",
+                    ".jpeg"  => "image/jpeg",
+                    ".gif"   => "image/gif",
+                    ".svg"   => "image/svg+xml",
+                    ".ico"   => "image/x-icon",
+                    ".txt"   => "text/plain",
+                    ".woff"  => "font/woff",
+                    ".woff2" => "font/woff2",
+                    ".ttf"   => "font/ttf",
+                    ".mp3"   => "audio/mpeg",
+                    ".mp4"   => "video/mp4",
+                    ".webm"  => "video/webm",
+                };
+            }
+
+            internal static byte[]? ReadPAK(ZipArchive pak, string relativePath) {
+                try {
+                    var entry = pak.GetEntry(relativePath.Replace('\\', '/'));
+
+                    if (entry is null) return null;
+
+                    using Stream entryStream = entry.Open();
+                    using var ms = new MemoryStream();
+                    entryStream.CopyTo(ms);
+                    return ms.ToArray();
+                }
+                catch {
+                    return null;
+                }
             }
 
         #endregion
 
-        #region Private methods
 
-            private static Platform GetPlatform(){
-                if (OperatingSystem.IsBrowser())                                   return Platform.WEB;
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))           return Platform.WINDOWS;
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))             return Platform.LINUX;
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))               return Platform.MACOS;
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("ANDROID"))) return Platform.ANDROID;
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("IOS")))     return Platform.IOS;
-
-                return Platform.UNKNOWN;
-            }
-
-        #endregion
     }
 }

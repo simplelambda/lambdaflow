@@ -17,33 +17,31 @@
 	<ItemGroup>
 		<None Include="**\*" />
 		<Compile Include="lambdaflow/TMP/lambdaflow/source/**/*.cs" />
-		<EmbeddedResource Include ="lambdaflow/TMP/config.json" />
-		<EmbeddedResource Include ="lambdaflow/TMP/integrity.json" />
 	</ItemGroup>
-
-
-
-
+		
+	
+	
+	
 	<PropertyGroup>
 		<DefineConstants>$(DefineConstants);$(PlatformDefine);$(SecurityDefine)</DefineConstants>
 	</PropertyGroup>
 
 
-
-
+	
+	
 	<ItemGroup Condition="'$(PlatformDefine)' == 'LINUX'">
 		<Compile Remove="lambdaflow/source/**/Android*.cs" />
 		<Compile Remove="lambdaflow/source/**/Windows*.cs" />
 	</ItemGroup>
 
-
+	
 	<ItemGroup Condition="'$(PlatformDefine)' == 'ANDROID'">
 		<Compile Remove="lambdaflow/source/**/Linux*.cs" />
 		<Compile Remove="lambdaflow/source/**/Windows*.cs" />
-
+		
 	</ItemGroup>
 
-
+	
 	<ItemGroup Condition="'$(PlatformDefine)' == 'WINDOWS'">
 		<Compile Remove="lambdaflow/source/**/Android*.cs" />
 		<Compile Remove="lambdaflow/source/**/Linux*.cs" />
@@ -55,9 +53,9 @@
 		<UseWindowsForms>true</UseWindowsForms>
 	</PropertyGroup>
 
-
-
-
+	
+	
+	
 	<ItemGroup Condition="'$(SecurityDefine)' != 'MINIMAL'">
 		<Compile Remove="lambdaflow/source/Security/Strategies/MinimalStrategy.cs" />
 	</ItemGroup>

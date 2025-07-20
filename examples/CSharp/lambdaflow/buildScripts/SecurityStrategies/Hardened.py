@@ -1,4 +1,31 @@
-from Utilities import *
+import secrets
 
-def hardened_modify_framework(plat):
-	inject_global_variable("lambdaflow/TMP/lambdaflow/source/Utilities.cs", "securityMode", "SecurityMode.HARDENED")
+from SecurityStrategies.Strategy import Strategy
+from Utilities.Utilities         import *
+
+class Hardened(Strategy):
+	def Apply(self):
+		inject_global_variable("lambdaflow/TMP/lambdaflow/source/Config.cs", "SecurityMode", "SecurityMode.INTEGRITY")
+
+		# ----- CREATION OF INTEGRITY DATA -----
+
+		log("Creating integrity settings", banner_type="info")
+
+		manifest = f"""
+			{{
+				"backend.pak": "{sha512(normalizePath("lambdaflow/TMP/backend.pak"))}","
+				"frontend.pak": "{sha512(normalizePath("lambdaflow/TMP/frontend.pak"))}"
+			}}
+		"""
+
+		inject_global_variable("lambdaflow/TMP/lambdaflow/source/Config.cs", "Integrity", f"@\"{manifest}\"")
+	
+		# ----- INJECT PUBLIC KEY -----
+
+		log("Injecting public key", banner_type="info")
+
+		public_key = ""
+		with open(normalizePath("lambdaflow/TMP/public.pub"), "r", encoding="utf-8") as f:
+			public_key = f.read()
+
+		inject_global_variable("lambdaflow/TMP/lambdaflow/source/Config.cs", "PublicKeyPem", f"@\"{public_key}\"")
