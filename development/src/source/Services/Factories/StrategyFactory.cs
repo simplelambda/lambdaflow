@@ -1,5 +1,4 @@
 ﻿using System;
-using System;
 
 namespace LambdaFlow {
     internal static class StrategyFactory {
@@ -11,7 +10,10 @@ namespace LambdaFlow {
                     SecurityMode.INTEGRITY => new IntegrityStrategy(signer, protector),
                 #elif HARDENED
                     SecurityMode.HARDENED => new HardenedStrategy(signer, protector),
+                #elif RUN
+                    SecurityMode.RUN => new RunStrategy(),
                 #endif
+
                 _ => throw new NotSupportedException($"Security mode '{Config.SecurityMode}' is not supported.")
             };
         }

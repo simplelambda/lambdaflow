@@ -16,6 +16,8 @@ namespace LambdaFlow {
 
             internal readonly static byte[] RandomIntegrityKey = { };
 
+            internal static FileStream? FrontFS;
+
         #endregion
 
         #region Internal methods
@@ -37,46 +39,6 @@ namespace LambdaFlow {
                 using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
                 return reader.ReadToEnd();
             }
-
-            internal static T DecryptJsonFromStream<T>(Stream encryptedStream, bool integrity = true, bool config = false){
-                /*if (encryptedStream == null) throw new ArgumentNullException(nameof(encryptedStream));
-
-                byte[] key = integrity ? RandomIntegrityKey : RandomConfigKey;
-
-                if (key == null || key.Length != 32) throw new ArgumentException("AES-GCM Key must have 32 bytes.", nameof(key));
-
-                byte[] blob;
-                using (var ms = new MemoryStream()){
-                    encryptedStream.CopyTo(ms);
-                    blob = ms.ToArray();
-                }
-
-                if (blob.Length < 12 + 16 + 1) throw new InvalidDataException("Blob too short AES-GCM.");
-
-                ReadOnlySpan<byte> nonce = blob.AsSpan(0, 12);
-                ReadOnlySpan<byte> ciphertext = blob.AsSpan(12, blob.Length - 12 - 16);
-                ReadOnlySpan<byte> tag = blob.AsSpan(blob.Length - 16, 16);
-
-                byte[] plain = new byte[ciphertext.Length];
-
-                try{
-                    using var aes = new AesGcm(key, 16);
-                    aes.Decrypt(nonce, ciphertext, tag, plain);
-                }
-                catch (CryptographicException ex){
-                    throw new SecurityException("AES-GCM decryption failed.", ex);
-                }
-
-                CryptographicOperations.ZeroMemory(blob);
-
-                T result = JsonSerializer.Deserialize<T>(plain) ?? throw new InvalidDataException("No se pudo deserializar el JSON descifrado.");
-
-                CryptographicOperations.ZeroMemory(plain);
-
-                return result;*/
-
-                return JsonSerializer.Deserialize<T>(encryptedStream) ?? throw new InvalidDataException("Failed to deserialize JSON from stream.");
-        }
 
             internal static string GetMimeType(string path) {
                 var ext = Path.GetExtension(path);

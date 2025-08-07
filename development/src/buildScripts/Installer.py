@@ -1,3 +1,10 @@
+import os
+import shutil
+import sys
+from pathlib import Path
+
+from Utilities.Utilities import *
+
 def get_nsis_executable():
     exe = shutil.which("makensis")
     if exe:
@@ -11,7 +18,7 @@ def get_nsis_executable():
 
     raise FileNotFoundError("makensis.exe not found. Please ensure NSIS is installed and in your PATH.")
 
-def build_windows_installer(results_dir, app_name, app_version, org_name, arch):
+def build_windows_installer(config, result_name, results_dir, app_name, app_version, org_name, install_dir, arch):
     tname = "installer_x86.nsi.template" if arch == "x86" else "installer_x64.nsi.template"
     tpl = Path(os.path.join("lambdaflow", "NSIS", tname)).read_text()
     filled = (
@@ -20,11 +27,14 @@ def build_windows_installer(results_dir, app_name, app_version, org_name, arch):
         .replace("${APP_VERSION}", app_version)
         .replace("${ORG_NAME}",    org_name)
         .replace("${SRC_DIR}",     results_dir)
-        .replace("${APP_ICO}",        app_ico)
-        .replace("${MACRO_LICENSE}",  "!insertmacro MUI_PAGE_LICENSE" if addLicenseToInstaller else "")
-        .replace("${LICENSE_FILE}",   licenseFile if addLicenseToInstaller else "")
+        .replace("${APP_ICO}",        config.Get("appIcon", "app.ico"))
+        .replace("${MACRO_LICENSE}",  "!insertmacro MUI_PAGE_LICENSE" if config.Get("addLicenseToInstaller", True) else "")
+        .replace("${LICENSE_FILE}",   config.Get("licenseFile", "license.txt") if config.Get("addLicenseToInstaller", True) else "")
         .replace("${EXE_NAME}", f"{result_name}.exe")
+        .replace("${INSTALL_DIR}", install_dir)
     )
+
+    print(filled)
 
     Path("installer.nsi").write_text(filled, encoding="utf-8")
 

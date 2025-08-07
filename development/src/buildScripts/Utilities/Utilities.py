@@ -1,4 +1,4 @@
-import shutil, json, zipfile, os, subprocess, hashlib, re, secrets
+import shutil, json, zipfile, os, subprocess, hashlib, re, secrets, asyncio, sys
 
 import tkinter as tk
 from tkinter import messagebox, filedialog
@@ -62,6 +62,17 @@ def ask(title, msg):
 def run(cmd, cwd=None):
     res = subprocess.run(cmd, shell=isinstance(cmd, str), cwd=cwd)
     if res.returncode != 0:
+        raise RuntimeError(f"ERROR: {cmd}")
+
+async def run_async(cmd, cwd=None):
+    proc = await asyncio.create_subprocess_shell(
+        cmd,
+        cwd = cwd,
+        stdout = sys.stdout,
+        stderr = sys.stderr
+    )
+    ret = await proc.wait()
+    if ret:
         raise RuntimeError(f"ERROR: {cmd}")
 
 def sha512(path):
@@ -210,7 +221,7 @@ def inject_global_variable(file_path, variable_name, new_value, encoding = "utf-
     text = path.read_text(encoding=encoding)
 
     pattern = re.compile(
-        rf"^(\s*(?:private|internal|public)\b[\w\s\<\>\,\.\[\]]*\b{re.escape(variable_name)}\s*=\s*)(.*?)(\s*;)",
+        rf"^(\s*(?:private|internal|public)\b[\w\s\<\>\,\.\[\]]*\b{re.escape(variable_name)}\s*(?:\{{.*?\}}\s*)?=\s*)(.+?)(\s*;)",
         re.MULTILINE | re.DOTALL | re.VERBOSE
     )
 

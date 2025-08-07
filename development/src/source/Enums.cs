@@ -13,6 +13,7 @@ namespace LambdaFlow {
     internal enum SecurityMode {
         MINIMAL,
         INTEGRITY,
-        HARDENED
+        HARDENED,
+        RUN
     }
 }

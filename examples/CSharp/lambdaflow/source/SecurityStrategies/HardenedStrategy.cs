@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Security;
+using System.Text.Json;
 using System.IO.Compression;
 using System.Collections.Generic;
 using System.Security.Cryptography;
@@ -26,31 +27,26 @@ namespace LambdaFlow {
         #region Public methods
 
             public void ApplySecurity() {
-                // Change program files permissions to none, so only admin can access
-
-                _protector.Protect(AppContext.BaseDirectory, new ProtectionOptions { RequireElevation = true });
-
 
                 // Verify executable integrity
 
                 if (!_signer.Verify()) throw new SecurityException($"Integrity failure. Executable modified.");
-
 
                 // Lock frontend.pak and backend.pak to avoid TOCTOU
 
                 var frontendPath = Path.Combine(AppContext.BaseDirectory, "frontend.pak");
                 _protector.Protect(frontendPath, new ProtectionOptions { AllowRead = true, RequireElevation = true });
                 var frontfs = _protector.LockFile(frontendPath);
+                Utilities.FrontFS = frontfs;
 
                 var backendPath = Path.Combine(AppContext.BaseDirectory, "backend.pak");
                 _protector.Protect(backendPath, new ProtectionOptions { AllowRead = true, RequireElevation = true });
                 var backfs = _protector.LockFile(backendPath);
 
 
-                // Decrypt integrity.json
+                // Obtain injected integrity.json
 
-                var integrityEncrypted = Utilities.GetEmbeddedResourceStream("integrity.json");
-                var integrity = Utilities.DecryptJsonFromStream<Dictionary<string, string>>(integrityEncrypted, integrity: true);
+                var integrity = JsonSerializer.Deserialize<Dictionary<string, string>>(Config.Integrity);
 
 
                 // Verify integrity.json hashes
@@ -85,12 +81,9 @@ namespace LambdaFlow {
                 // Change permissions for backend extraction folder
 
                 _protector.Protect(backendExtractPath, new ProtectionOptions { AllowRead = true, AllowWrite = true, RequireElevation = true });
+                _protector.UnlockFile(backfs);
                 ZipFile.ExtractToDirectory(backendPath, backendExtractPath, overwriteFiles: true);
                 _protector.Protect(backendExtractPath, new ProtectionOptions { AllowRead = true, RequireElevation = true });
-
-                // Unprotect backend.pak
-
-                _protector.UnlockFile(backfs);
             }
 
         #endregion

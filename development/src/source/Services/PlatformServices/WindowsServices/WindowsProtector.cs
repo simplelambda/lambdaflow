@@ -17,9 +17,9 @@ namespace LambdaFlow {
                 var fileInfo = new FileInfo(path);
                 var sec = fileInfo.GetAccessControl();
 
-
-                sec.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
-                var user = WindowsIdentity.GetCurrent().User!;
+                var users  = new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null);
+                var admins = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+                var system = new SecurityIdentifier(WellKnownSidType.LocalSystemSid,         null);
 
                 FileSystemRights rights = 0;
                 if (options.AllowRead) rights |= FileSystemRights.Read;
@@ -27,14 +27,13 @@ namespace LambdaFlow {
                 if (options.AllowExecute) rights |= FileSystemRights.ExecuteFile;
                 if (options.AllowDelete) rights |= FileSystemRights.Delete;
 
-                var rule = new FileSystemAccessRule(
-                    user,
-                    rights,
-                    InheritanceFlags.None,
-                    PropagationFlags.NoPropagateInherit,
-                    AccessControlType.Allow);
+                sec.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+                var full = FileSystemRights.FullControl;
 
-                sec.AddAccessRule(rule);
+                sec.SetAccessRule(new FileSystemAccessRule(users, rights, InheritanceFlags.None, PropagationFlags.NoPropagateInherit, AccessControlType.Allow));
+                sec.AddAccessRule(new FileSystemAccessRule(admins, full, InheritanceFlags.None, PropagationFlags.NoPropagateInherit, AccessControlType.Allow));
+                sec.AddAccessRule(new FileSystemAccessRule(system, full, InheritanceFlags.None, PropagationFlags.NoPropagateInherit, AccessControlType.Allow));
+                
                 fileInfo.SetAccessControl(sec);
             }
 
@@ -59,16 +58,5 @@ namespace LambdaFlow {
             }
 
         #endregion
-
-        #region Private methods
-
-            private bool IsAdministrator(){
-                using var identity = WindowsIdentity.GetCurrent();
-                var principal = new WindowsPrincipal(identity);
-                return principal.IsInRole(WindowsBuiltInRole.Administrator);
-            }
-
-        #endregion
-
     }
 }

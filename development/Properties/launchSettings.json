@@ -1,11 +1,20 @@
 {
   "profiles": {
-    "LambdaFlow Build": {
+    "Build": {
       "commandName": "Executable",
       "executablePath": "py",
       "commandLineArgs": "lambdaflow/buildScripts/build.py $(Configuration)",
       "workingDirectory": "$(ProjectDir)",
-      "console": "integratedTerminal"
+      "console": "internalConsole"
+    },
+
+    "Run": {
+      "commandName": "Executable",
+      "executablePath": "py",
+      "commandLineArgs": "lambdaflow/buildScripts/run.py $(Configuration)",
+      "workingDirectory": "$(ProjectDir)",
+      "preLaunchTask": "LaunchBuiltApp_Debug",
+      "console": "internalConsole"
     }
   }
 }

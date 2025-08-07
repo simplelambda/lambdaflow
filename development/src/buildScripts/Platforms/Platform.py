@@ -1,6 +1,7 @@
 ﻿from Utilities.Utilities import *
 from Platforms.OS        import OS 
 from Platforms.Arch      import Arch 
+from Installer           import *
 
 from SecurityStrategies.Strategy  import Strategy
 from SecurityStrategies.Minimal   import Minimal
@@ -18,7 +19,7 @@ class Platform():
     def __str__(self):
         return f"{self.os}-{self.arch}"
 
-    def Compile(self, config):
+    def Compile(self, config, mode):
         try:
             if config.Get(f"platforms.{self.os}.ignore", False) or config.Get(f"platforms.{self.os}.archs.{self.arch}.ignore", False):
                 return
@@ -38,9 +39,9 @@ class Platform():
 
             log("Compiling backend...", banner_type="info")
 
-            backend_cwd = Normalize(f"lambdaflow/TMP/{config.Get("developmentBackendFolder", "backend")}")
+            backend_cwd = Normalize(f"{config.Get("developmentBackendFolder", "backend")}")
             run(cmd, cwd=backend_cwd)
-            out_backend = Normalize(f"lambdaflow/TMP/{config.Get("developmentBackendFolder", "backend")}/{config.Get(f"{base_key}.compileDirectory", "bin")}")
+            out_backend = Normalize(f"{config.Get("developmentBackendFolder", "backend")}/{config.Get(f"{base_key}.compileDirectory", "bin")}")
 
             if not os.path.isdir(out_backend):
                 raise RuntimeError(f"ERROR: Expected backend output in '{out_backend}' but not found.")
@@ -64,7 +65,7 @@ class Platform():
 
             # If not found, try to get it from the general OS configuration
             if not security_mode:
-                security_mode = config.Get(f"platforms.{self.os}.securityMode", "Integrity")
+                security_mode = config.Get(f"platforms.{self.os}.securityMode", None)
 
             # If still not found, try to get it from de general configuration and if not found, default to "Integrity"
             if not security_mode:
@@ -76,7 +77,9 @@ class Platform():
             # ----- FRAMEWOKS CODE MODIFICATION -----
 
             log(f"Modifying framework code for security mode {security_mode}", banner_type="info")
-            self.__select_files(config, security_mode)
+            
+            if self.os.startswith("windows") and config.Get(f"platforms.{self.os}.archs.{self.arch}.useAuthenticode", False):
+                inject_global_variable("lambdaflow/source/Services/PlatformServices/WindowsServices/WindowsSigner.cs", "useAuthenticode", "true")
 
             # ----- APPLY SECURITY STRATEGY -----
             
@@ -99,13 +102,14 @@ class Platform():
             log(f"Compyling framework...", banner_type="info")
             result_name = f"{config.Get("appName", "lambdaflowApp")}-v{config.Get("appVersion", "1.0.0")}" if config.Get("includeVersionInResultName", True) else config.Get("appName", "lambdaflowApp")
             
-            self.__compile_framework(result_name, config, security_mode)
+            self.__compile_framework(result_name, config, security_mode, mode)
 
             # ------ SIGN EXECUTABLE -----
 
             log("Signing executable", banner_type="info")
 
             result_folder = Normalize(config.Get("resultFolder", "Results"))
+            copy(config.Get("appIcon", "app.ico"), f"{result_folder}/{self.os}/{self.arch}/")
 
             sign([f"{result_folder}/{self.os}/{self.arch}/{result_name}" + (".exe" if self.os.startswith("windows") else ""),
                   f"{result_folder}/{self.os}/{self.arch}/{result_name}.dll"], 
@@ -113,49 +117,50 @@ class Platform():
                   f"{result_folder}/{self.os}/{self.arch}/integrity.sig"
             )
 
+            # ----- PACKAGE -----
+       
+            package = config.Get(f"{base_key}.package", False)
+
+            if package:
+                log(f"Packaging installer", banner_type="info")
+
+                if self.os == "windows":    
+
+                    install_dir = ""
+
+                    if self.arch != "x86" and self.arch != "x32":
+                        install_dir = "$PROGRAMFILES64" if security_mode == "Hardened" else "$APPDATA"
+                    else:
+                        install_dir = "$PROGRAMFILES" if security_mode == "Hardened" else "$APPDATA"
+
+                    print(install_dir)
+
+                    build_windows_installer(
+                        config,
+                        result_name,
+                        results_dir=os.path.join(result_folder, self.os, self.arch),
+                        app_name=config.Get("appName", "lambdaflowApp"),
+                        app_version=config.Get("appVersion", "1.0.0"),
+                        org_name=config.Get("organizationName", "SimpleLambda"),
+                        install_dir=install_dir,
+                        arch=self.arch
+                    )
+                else:
+                    build_unix_installer(
+                        target=self.os,
+                        results_dir=os.path.join(result_folder, self.os, self.arch),
+                        app_name=config.Get("appName", "lambdaflowApp"),
+                        app_version=config.Get("appVersion", "1.0.0"),
+                        org_name=config.Get("organizationName", "SimpleLambda"),
+                        arch=self.arch
+                    )
+
         finally:
-            #remove("lambdaflow/TMP/backend.pak")
-            remove("lambdaflow/TMP/integrity.json")
+            remove("lambdaflow/TMP/backend.pak")
             remove("lambdaflow/TMP/public.pub")
             remove("lambdaflow/TMP/private.pem")
 
-    def __select_files(self, config, securityMode):
-        if self.os.startswith("windows") and config.Get(f"platforms.{self.os}.archs.{self.arch}.useAuthenticode", False):
-            inject_global_variable("lambdaflow/TMP/lambdaflow/source/Services/PlatformServices/WindowsServices/WindowsSigner.cs", "useAuthenticode", "true")
-
-        # List of all available platforms different from the current one
-        other_plats = ["android", "linux", "windows"]
-        other_plats.remove(self.os)
-
-        # Change .cs extension of files that does not starts with the current OS to .csx, and .csx extension of files that starts with the current OS to .cs
-        base = Normalize("lambdaflow/TMP/lambdaflow/source/Services/PlatformServices")
-        paths = [f"{base}/AndroidServices", f"{base}/LinuxServices", f"{base}/WindowsServices"]
-        for path in paths:
-            for file in os.listdir(path):
-                if file.startswith(self.os.capitalize()):
-                    if file.endswith(".csx"):
-                        rename(f"{path}/{file}", file.replace(".csx", ".cs"))
-                else:
-                    for other_plat in other_plats:
-                        if file.startswith(other_plat.capitalize()) and file.endswith(".cs"):
-                            rename(f"{path}/{file}", file.replace(".cs", ".csx"))
-
-        # Repeat the precious process for the Security strategies
-
-        other_strategies = ["Minimal", "Integrity", "Hardened"]
-        other_strategies.remove(securityMode)
-
-        path = Normalize(f"lambdaflow/TMP/lambdaflow/source/SecurityStrategies")
-        for file in os.listdir(path):
-            if file.startswith(securityMode):
-                if file.endswith(".csx"):
-                    rename(f"{path}/{file}", file.replace(".csx", ".cs"))
-            else:
-                for other_strat in other_strategies:
-                    if file.startswith(other_strat) and file.endswith(".cs"):
-                        rename(f"{path}/{file}", file.replace(".cs", ".csx"))
-
-    def __compile_framework(self, result_name, config, security_mode):
+    def __compile_framework(self, result_name, config, security_mode, mode):
         rid_map = {
             "windows-x86": "win-x86",
             "windows-x64": "win-x64",
@@ -181,8 +186,7 @@ class Platform():
 
         fw_out = Normalize(f"bin/{self.os}/{self.arch}")
         csproj_name = find_first_csproj("")
-        result_name = f"{config.Get("appName", "lambdaflowApp")}-v{config.Get("appVersion", "1.0.0")}" if config.Get("includeVersionInResultName", True) else config.Get("appName", "lambdaflowApp")
-    
+
         targets_map = {
             "windows": "net8.0-windows",
             "linux": "net8.0",
@@ -196,11 +200,10 @@ class Platform():
 
         log(f"Target framework: {target}", banner_type="info")
 
-        run(f"dotnet publish {csproj_name}.csproj -c Release -f {target} -r {rid} -o {fw_out} -p:AssemblyName={result_name} -p:SelfContained={config.Get("selfContainedFramework", True)} -p:PlatformDefine={self.os.upper()} -p:SecurityDefine={security_mode.upper()}", cwd=Normalize(""))
+        run(f"dotnet publish {csproj_name}.csproj -c Release -f {target} -r {rid} -o {fw_out} -p:AssemblyName={result_name} -p:SelfContained={config.Get("selfContainedFramework", True)} -p:PlatformDefine={self.os.upper()} -p:SecurityDefine={security_mode.upper()} {'-p:DebugDefine=DEBUG' if mode == "Debug" else ''}", cwd=Normalize(""))
 
         if not os.path.isdir(fw_out):
             raise RuntimeError(f"ERROR: Expected framework output in '{fw_out}' but not found.")
-
 
         results_forlder = config.Get("resultFolder", "Results")
 

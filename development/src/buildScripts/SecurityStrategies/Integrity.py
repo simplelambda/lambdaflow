@@ -5,8 +5,6 @@ from Utilities.Utilities         import *
 
 class Integrity(Strategy):
 	def Apply(self):
-		inject_global_variable("lambdaflow/TMP/lambdaflow/source/Config.cs", "SecurityMode", "SecurityMode.INTEGRITY")
-
 		# ----- CREATION OF INTEGRITY DATA -----
 
 		log("Creating integrity settings", banner_type="info")
@@ -18,7 +16,7 @@ class Integrity(Strategy):
 			}}
 		"""
 
-		inject_global_variable("lambdaflow/TMP/lambdaflow/source/Config.cs", "Integrity", f"@\"{manifest}\"")
+		inject_global_variable("lambdaflow/source/Config.cs", "Integrity", f"@\"{manifest}\"")
 	
 		# ----- INJECT PUBLIC KEY -----
 
@@ -28,4 +26,4 @@ class Integrity(Strategy):
 		with open(Normalize("lambdaflow/TMP/public.pub"), "r", encoding="utf-8") as f:
 			public_key = f.read()
 
-		inject_global_variable("lambdaflow/TMP/lambdaflow/source/Config.cs", "PublicKeyPem", f"@\"{public_key}\"")
+		inject_global_variable("lambdaflow/source/Config.cs", "PublicKeyPem", f"@\"{public_key}\"")

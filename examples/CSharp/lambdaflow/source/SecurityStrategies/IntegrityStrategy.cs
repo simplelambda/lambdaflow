@@ -35,6 +35,7 @@ namespace LambdaFlow {
                 var frontendPath = Path.Combine(AppContext.BaseDirectory, "frontend.pak");
                 _protector.Protect(frontendPath, new ProtectionOptions { AllowRead = true });
                 var frontfs = _protector.LockFile(frontendPath);
+                Utilities.FrontFS = frontfs;
 
                 var backendPath = Path.Combine(AppContext.BaseDirectory, "backend.pak");
                 _protector.Protect(backendPath, new ProtectionOptions { AllowRead = true });

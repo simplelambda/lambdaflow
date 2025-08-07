@@ -1,9 +1,11 @@
 ﻿using System;
 using System.IO;
+using System.Text.Json;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Threading.Tasks;
 using System.Runtime.Versioning;
+using System.Drawing;
 
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.WinForms;
@@ -22,14 +24,19 @@ namespace LambdaFlow {
 
         #region Public methods
 
-            
+           
             public async void Initialize(IIPCBridge ipcBridge) {
                 // Create the host form and WebView2 control
                 _host = new Form
                 {
                     Text = Config.Window.Title ?? "LambdaFlow app",
                     WindowState = FormWindowState.Maximized,
-                    StartPosition = FormStartPosition.CenterScreen
+                    StartPosition = FormStartPosition.CenterScreen,
+                    Width = Config.Window.Width,
+                    Height = Config.Window.Height,
+                    MinimumSize = new System.Drawing.Size(Config.Window.MinWidth, Config.Window.MinHeight),
+                    MaximumSize = new System.Drawing.Size(Config.Window.MaxWidth, Config.Window.MaxHeight),
+                    Icon = new Icon("app.ico")
                 };
 
                 // Create webview control
@@ -37,8 +44,22 @@ namespace LambdaFlow {
                 _host.Controls.Add(_view);
 
                 // Initialize the WebView2 environment
-                var env = await CoreWebView2Environment.CreateAsync();
+                var browserArgs = DetermineFastResolverArgs();
+                var options = new CoreWebView2EnvironmentOptions(browserArgs);
+
+                var env = await CoreWebView2Environment.CreateAsync(
+                              browserExecutableFolder: null,
+                              userDataFolder: null,
+                              options: options);
+
                 await _view.EnsureCoreWebView2Async(env);
+
+                #if !DEBUG 
+                    var settings = _view.CoreWebView2.Settings;
+                    settings.AreBrowserAcceleratorKeysEnabled = false;
+                    settings.AreDefaultContextMenusEnabled = false;
+                    settings.IsStatusBarEnabled = false;
+                #endif
 
                 // Bind frontend methods send(msg) and receive(msg)
                 await BindFrontendMethods();
@@ -46,11 +67,14 @@ namespace LambdaFlow {
                 // Set the action for when a message is received from the frontend
                 _view.CoreWebView2.WebMessageReceived += (_, e) => {
                     string msg = e.TryGetWebMessageAsString();
+                    Console.WriteLine($"Message from frontend: {msg}");
                     ipcBridge.SendMessageToBackend(msg);
                 };
 
                 // Open the frontend.pak file
-                _pak = new ZipArchive(File.OpenRead("frontend.pak"), ZipArchiveMode.Read, leaveOpen: false);
+
+                if (Utilities.FrontFS is not null) _pak = new ZipArchive(Utilities.FrontFS, ZipArchiveMode.Read, leaveOpen: false);         
+                else                               _pak = new ZipArchive(File.OpenRead("frontend.pak"), ZipArchiveMode.Read, leaveOpen: false);
 
                 // Virtual origin that maps to the frontend .pak
                 _view.CoreWebView2.AddWebResourceRequestedFilter(uri: "https://app/*", CoreWebView2WebResourceContext.All);
@@ -99,32 +123,54 @@ namespace LambdaFlow {
                 var safePath = url.TrimStart('/');
 
                 _view.CoreWebView2.Navigate($"https://app/{safePath}");
-
-                Console.WriteLine($"Navigating to: https://app/{safePath}");
             }
 
-            public void SendMessageToFrontend(string message) => _view?.CoreWebView2?.ExecuteScriptAsync($"window.receive(\"{message}\");");
+            public void SendMessageToFrontend(string message) {
+                string jsArg = JsonSerializer.Serialize(message);
+                Console.WriteLine($"Sending message to frontend: {jsArg}");
+                _view?.CoreWebView2?.ExecuteScriptAsync($"window.receive({jsArg});");
+            }
 
             public void ModifyTitle(string title) {
-
+                if (_host is not null) _host.Text = title;
             }
+
             public void ModifySize(int width, int height) {
-
+                if (_host is not null) {
+                    _host.Width = width;
+                    _host.Height = height;
+                }
             }
+
             public void ModfyMinSize(int width, int height) {
-
+                if (_host is not null) {
+                    _host.MinimumSize = new Size(width, height);
+                }
             }
+
             public void ModifyMaxSize(int width, int height) {
-
+                if (_host is not null) {
+                    _host.MaximumSize = new Size(width, height);
+                }
             }
+
             public void ModifyPosition(int x, int y) {
-
+                if (_host is not null) {
+                    _host.StartPosition = FormStartPosition.Manual;
+                    _host.Location = new Point(x, y);
+                }
             }
+
             public void Minimize() {
-
+                if (_host is not null) {
+                    _host.WindowState = FormWindowState.Minimized;
+                }
             }
-            public void Maximize() {
 
+            public void Maximize() {
+                if (_host is not null) {
+                    _host.WindowState = FormWindowState.Maximized;
+                }
             }
 
         #endregion
@@ -141,6 +187,32 @@ namespace LambdaFlow {
                         console.warn('LambdaFlow: receive(msg) not implemented.');
                     };
                 ");
+            }
+
+            private string? DetermineFastResolverArgs() {
+                var verStr = CoreWebView2Environment.GetAvailableBrowserVersionString();
+                if (int.TryParse(verStr.Split('.')[0], out int major) && major >= 118) {
+                    return $"--host-resolver-rules=\"MAP app 0.0.0.0\"";
+                }
+
+                TryAddHostsEntry();
+                return null;
+            }
+
+            private static void TryAddHostsEntry() {
+                try {
+                    string hostsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"drivers\etc\hosts");
+
+                    var lines = File.ReadAllLines(hostsPath);
+                    foreach (var ln in lines)
+                        if (ln.Contains($" app")) return;
+
+                    File.AppendAllText(hostsPath,
+                        $"{Environment.NewLine}127.0.0.1    app{Environment.NewLine}");
+                }
+                catch {
+
+                }
             }
 
             private void HandlePakRequest(object? _, CoreWebView2WebResourceRequestedEventArgs e) {

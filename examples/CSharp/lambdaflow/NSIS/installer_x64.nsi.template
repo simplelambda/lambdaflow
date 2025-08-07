@@ -8,6 +8,7 @@
 !define APP_ICO     "${APP_ICO}"
 !define ORG_NAME    "${ORG_NAME}"
 !define SRC_DIR     "${SRC_DIR}"
+!define INSTALL_DIR "${INSTALL_DIR}"
 
 !define MUI_ICON    "app.ico"
 !define MUI_UNICON  "app.ico"
@@ -16,7 +17,7 @@
 
 Name "${APP_NAME} ${APP_VERSION}"
 OutFile "${SRC_DIR}\${APP_NAME}-${APP_VERSION}-winx64--installer.exe"
-InstallDir "$PROGRAMFILES64\${ORG_NAME}\${APP_NAME}"
+InstallDir "${INSTALL_DIR}\${ORG_NAME}\${APP_NAME}"
 BrandingText "${ORG_NAME} ${APP_NAME} ${APP_VERSION}"
 RequestExecutionLevel admin
 
@@ -44,7 +45,7 @@ Function .onInit
     Goto done_init
 
   not_installed:
-    StrCpy $INSTDIR "$PROGRAMFILES64\${ORG_NAME}\${APP_NAME}"
+    StrCpy $INSTDIR "${INSTALL_DIR}\${ORG_NAME}\${APP_NAME}"
     Goto done_init
 
   do_reinstall:
@@ -75,11 +76,6 @@ ${MACRO_LICENSE} ${LICENSE_FILE}
 Section "Install"
     SetOutPath "$INSTDIR"
     File /r "${SRC_DIR}\*"
-         
-
-    CreateDirectory "$PROGRAMFILES64\${ORG_NAME}\${APP_NAME}"
-    Rename       "$INSTDIR\public.pem"    "$PROGRAMFILES64\${ORG_NAME}\${APP_NAME}\public.pem"
-    Rename       "$INSTDIR\integrity.sig" "$PROGRAMFILES64\${ORG_NAME}\${APP_NAME}\integrity.sig"
 
     WriteUninstaller "$INSTDIR\Uninstall.exe"
 
@@ -99,7 +95,6 @@ Section "Install"
 SectionEnd
 
 Section "Uninstall"
-    RMDir /r "$PROGRAMFILES64\${ORG_NAME}\${APP_NAME}"
     RMDir /r "$INSTDIR"
     RMDir /r "$SMPROGRAMS\${APP_NAME}"
 

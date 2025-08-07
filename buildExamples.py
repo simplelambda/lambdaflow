@@ -32,7 +32,8 @@ def sync_examples():
 
         frameworkProperties = os.path.join(repo_root, 'development', 'Properties')
         frameworkProperties_dst = os.path.join(example_dir, 'Properties')
-
+        if os.path.isdir(frameworkProperties_dst):
+            shutil.rmtree(frameworkProperties_dst)
         if os.path.isdir(frameworkProperties):
             shutil.copytree(frameworkProperties, frameworkProperties_dst)
 

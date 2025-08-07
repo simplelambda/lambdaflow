@@ -1,5 +1,59 @@
-from Utilities import *
-from Developer_info import *
+from Dependencies.Developer import *
+
+import subprocess, shutil, os
+
+class Dependencies():
+    def __init__(self):
+        self.developer_info = Developer()
+        self.ww2 = self.__has_webview2()
+        self.nsis = self.__has_nsis()
+
+    def __has_webview2(self):
+        if not self.developer_info.developer_so.startswith("win"):
+            return False
+
+        reg_paths = [
+            r"HKLM\SOFTWARE\Microsoft\EdgeUpdate\Clients",
+            r"HKLM\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients",
+            r"HKCU\SOFTWARE\Microsoft\EdgeUpdate\Clients"
+        ]
+
+        for path in reg_paths:
+            try:
+                result = subprocess.run(
+                    ["reg", "query", path, "/s"],
+                    capture_output=True, text=True, shell=False
+                )
+            except FileNotFoundError:
+                break
+
+            if result.returncode == 0 and "webview2" in result.stdout.lower():
+                return True
+
+        return False
+
+    def __has_nsis(self):
+        if shutil.which("makensis"):
+            return True
+
+        if self.developer_info.developer_so.startswith("win"):
+            candidates = []
+            pf86 = os.environ.get("ProgramFiles(x86)")
+            pf   = os.environ.get("ProgramFiles")
+            if pf86:
+                candidates.append(os.path.join(pf86, "NSIS", "makensis.exe"))
+            if pf:
+                candidates.append(os.path.join(pf,   "NSIS", "makensis.exe"))
+
+            for exe in candidates:
+                if os.path.isfile(exe):
+                    pdir = os.path.dirname(exe)
+                    return True
+
+        return False
+
+
+
 
 # ----- VARIABLES -----
 
@@ -11,45 +65,9 @@ bash_cmd = None
 
 # ----- METHODS -----
 
-def has_webview2_windows():
-    reg_paths = [
-        r"HKLM\SOFTWARE\Microsoft\EdgeUpdate\Clients",
-        r"HKLM\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients",
-        r"HKCU\SOFTWARE\Microsoft\EdgeUpdate\Clients"
-    ]
 
-    for path in reg_paths:
-        try:
-            result = subprocess.run(
-                ["reg", "query", path, "/s"],
-                capture_output=True, text=True, shell=False
-            )
-        except FileNotFoundError:
-            break
 
-        if result.returncode == 0 and "webview2" in result.stdout.lower():
-            return True
 
-    return False
-
-def is_nsis_installed():
-    if shutil.which("makensis"):
-        return True
-
-    if developer_so.startswith("win"):
-        candidates = []
-        pf86 = os.environ.get("ProgramFiles(x86)")
-        pf   = os.environ.get("ProgramFiles")
-        if pf86:
-            candidates.append(os.path.join(pf86, "NSIS", "makensis.exe"))
-        if pf:
-            candidates.append(os.path.join(pf,   "NSIS", "makensis.exe"))
-
-        for exe in candidates:
-            if os.path.isfile(exe):
-                pdir = os.path.dirname(exe)
-                return True
-    return False
 
 def get_bash_cmd():
     if developer_so == "windows":

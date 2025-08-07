@@ -16,14 +16,14 @@
 
 	<ItemGroup>
 		<None Include="**\*" />
-		<Compile Include="lambdaflow/TMP/lambdaflow/source/**/*.cs" />
+		<Compile Include="lambdaflow/source/**/*.cs" />
 	</ItemGroup>
 		
 	
 	
 	
 	<PropertyGroup>
-		<DefineConstants>$(DefineConstants);$(PlatformDefine);$(SecurityDefine)</DefineConstants>
+		<DefineConstants>$(RunDefine);$(DebugDefine);$(PlatformDefine);$(SecurityDefine)</DefineConstants>
 	</PropertyGroup>
 
 
@@ -47,25 +47,34 @@
 		<Compile Remove="lambdaflow/source/**/Linux*.cs" />
 
 		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3351.48" />
+		<PackageReference Include="System.Drawing.Common" Version="9.0.7" />
 	</ItemGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net8.0-windows'">
 		<UseWindowsForms>true</UseWindowsForms>
 	</PropertyGroup>
 
-	
-	
-	
+
+
+
 	<ItemGroup Condition="'$(SecurityDefine)' != 'MINIMAL'">
-		<Compile Remove="lambdaflow/source/Security/Strategies/MinimalStrategy.cs" />
+		<Compile Remove="lambdaflow/source/SecurityStrategies/MinimalStrategy.cs" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(SecurityDefine)' != 'INTEGRITY'">
-		<Compile Remove="lambdaflow/source/Security/Strategies/IntegrityStrategy.cs" />
+		<Compile Remove="lambdaflow/source/SecurityStrategies/IntegrityStrategy.cs" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(SecurityDefine)' != 'HARDENED'">
-		<Compile Remove="lambdaflow/source/Security/Strategies/HardenedStrategy.cs" />
+		<Compile Remove="lambdaflow/source/SecurityStrategies/HardenedStrategy.cs" />
+	</ItemGroup>
+
+	<PropertyGroup Condition="'$(SecurityDefine)' == 'HARDENED'">
+		<ApplicationManifest>lambdaflow/app.manifest</ApplicationManifest>
+	</PropertyGroup>
+
+	<ItemGroup Condition="'$(SecurityDefine)' != 'RUN'">
+		<Compile Remove="lambdaflow/source/SecurityStrategies/RunStrategy.cs" />
 	</ItemGroup>
 
 </Project>

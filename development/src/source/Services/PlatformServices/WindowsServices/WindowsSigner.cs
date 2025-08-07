@@ -14,7 +14,7 @@ namespace LambdaFlow {
     internal class WindowsSigner : ISigner{
         #region Variables
 
-            private const bool useAuthenticode = false;
+            private const bool useAuthenticode = true;
 
         #endregion
 
@@ -79,6 +79,7 @@ namespace LambdaFlow {
                     data = sha.Hash!;
                 }
                 catch {
+                    Console.WriteLine("Error reading signature or data files.");
                     return false;
                 }
 
