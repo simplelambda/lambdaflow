@@ -13,8 +13,6 @@ nav:
     - Introducion: tech/index.md
     - Build:
       - Overview: tech/build/index.md
-      - Build mode:
-      - Run mode:
     - Packaging:
       - Overview: tech/packaging/index.md
     - Runtime:
@@ -35,7 +33,5 @@ plugins:
           "Technical Reference": "Referencia técnica"
           Build: "Compilación"
           Overview: "Descripción general"
-          "Build mode": "Modo Build"
-          "Run mode": "Modo Run"
           Packaging: "Empaquetado"
           Runtime: "Tiempo de ejecución"
