@@ -13,7 +13,6 @@
       "executablePath": "py",
       "commandLineArgs": "lambdaflow/buildScripts/run.py $(Configuration)",
       "workingDirectory": "$(ProjectDir)",
-      "preLaunchTask": "LaunchBuiltApp_Debug",
       "console": "internalConsole"
     }
   }
