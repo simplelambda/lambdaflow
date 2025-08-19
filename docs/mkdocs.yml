@@ -1,4 +1,4 @@
-site_name: Lambdaflow
+﻿site_name: Lambdaflow
 site_description: "Secure C# polyglot framework—any backend, modern WebView UI"
 theme:
   name: material
@@ -7,10 +7,10 @@ nav:
   - Home: index.md
 
   - Usage Guide:
-    - Introducion: usage/index.md
+    - Introduction: usage/index.md
 
   - Technical Reference: 
-    - Introducion: tech/index.md
+    - Introduction: tech/index.md
     - Build:
       - Overview: tech/build/index.md
     - Packaging:
@@ -20,16 +20,20 @@ nav:
 
 plugins:
   - i18n:
-      default_language: en
       languages:
-        en: English
-        es: Español
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: es
+          name: Español
+          build: true
       nav_translations:
         es:
           Home: Inicio
 
           "Usage Guide": "Guía de uso"
-          Introducion: "Introducción"
+          Introduction: "Introducción"
           "Technical Reference": "Referencia técnica"
           Build: "Compilación"
           Overview: "Descripción general"
